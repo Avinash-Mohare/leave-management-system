@@ -9,8 +9,12 @@ import PendingApprovals from "./PendingApprovals";
 import LeaveHistory from "./LeaveHistory";
 import { sendSlackNotification } from "../utils/sendSlackNotification";
 import CompOffHistory from "./CompOffHistory";
+import LeaveRequestForm from "./LeaveRequestForm";
+import PendingLeaveApprovals from "./PendingLeaveApprovals";
+
 const EmployeeDashboard = () => {
   const [employeeData, setEmployeeData] = useState("");
+  const [employeeNames, setEmployeeNames] = useState({});
   const [activeTab, setActiveTab] = useState("Leave Balance");
   const [isLeaveFormVisible, setIsLeaveFormVisible] = useState(false);
   const [reqStartDate, setReqStartDate] = useState("");
@@ -31,6 +35,18 @@ const EmployeeDashboard = () => {
       onValue(employeeRef, (snapshot) => {
         const data = snapshot.val();
         setEmployeeData(data);
+      });
+
+      // Fetching employee names to map UUIDs to names
+      const employeesRef = ref(database, "employees");
+      onValue(employeesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const employees = snapshot.val();
+          const namesMap = Object.fromEntries(
+            Object.entries(employees).map(([id, employee]) => [id, employee.name])
+          );
+          setEmployeeNames(namesMap);
+        }
       });
     } else {
       navigate("/login");
@@ -65,28 +81,12 @@ const EmployeeDashboard = () => {
     return true;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, leaveRequest) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
 
     const user = auth.currentUser;
 
     if (user) {
-      const leaveRequest = {
-        leaveType: reqLeaveType,
-        startDate: reqStartDate,
-        endDate: isHalfDay ? reqStartDate : reqEndDate,
-        reason: reqReason.trim(),
-        status: "pending",
-        timestamp: Date.now(),
-        isHalfDay: isHalfDay,
-      };
-
-      setSlackNotifData(leaveRequest);
-
       const newLeaveRequestRef = push(
         ref(database, `leaveRequests/${user.uid}`)
       );
@@ -94,13 +94,7 @@ const EmployeeDashboard = () => {
       set(newLeaveRequestRef, leaveRequest)
         .then(() => {
           alert("Leave request submitted successfully!");
-          setIsLeaveFormVisible(false);
-          setReqLeaveType("casualLeave");
-          setReqStartDate("");
-          setReqEndDate("");
-          setReqReason("");
-          setIsHalfDay(false);
-          setFormError("");
+          setActiveTab("Leave Balance");
 
           // Move the Slack notification here
           if (notifySlack) {
@@ -111,19 +105,6 @@ const EmployeeDashboard = () => {
           console.error("Error submitting leave request:", error);
           setFormError("Failed to submit leave request. Please try again.");
         });
-    }
-  };
-
-  const handleStartDateChange = (event) => {
-    const newStartDate = event.target.value;
-    setReqStartDate(newStartDate);
-
-    if (
-      !isHalfDay &&
-      reqEndDate &&
-      new Date(reqEndDate) < new Date(newStartDate)
-    ) {
-      setReqEndDate("");
     }
   };
 
@@ -148,95 +129,10 @@ const EmployeeDashboard = () => {
         );
       case "Request Leave":
         return (
-          <div className="bg-white shadow-md rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-4">Request Leave</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {formError && (
-                <div className="text-red-500 font-bold">{formError}</div>
-              )}
-              <div>
-                <label className="block mb-1">Type of Leave:</label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={reqLeaveType}
-                  onChange={(event) => setReqLeaveType(event.target.value)}
-                  required
-                >
-                  <option value="casualLeave">Casual Leave</option>
-                  {employeeData.isMumbaiTeam && (
-                    <option value="sickLeave">Sick Leave</option>
-                  )}
-                  <option value="compOffLeave">Comp Off Leave</option>
-                </select>
-              </div>
-              <div>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={isHalfDay}
-                    onChange={(e) => setIsHalfDay(e.target.checked)}
-                    className="mr-2"
-                  />
-                  Half Day
-                </label>
-              </div>
-              <div className="flex space-x-4">
-                <div className="flex-1">
-                  <label className="block mb-1">
-                    {isHalfDay ? "Date:" : "From:"}
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full p-2 border rounded"
-                    value={reqStartDate}
-                    onChange={handleStartDateChange}
-                    required
-                  />
-                </div>
-                {!isHalfDay && (
-                  <div className="flex-1">
-                    <label className="block mb-1">To:</label>
-                    <input
-                      type="date"
-                      className="w-full p-2 border rounded"
-                      value={reqEndDate}
-                      onChange={(event) => setReqEndDate(event.target.value)}
-                      min={reqStartDate}
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block mb-1">Reason:</label>
-                <textarea
-                  rows={5}
-                  placeholder="Describe your reason..."
-                  value={reqReason}
-                  className="w-full p-2 border rounded resize-none"
-                  onChange={(event) => setReqReason(event.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={notifySlack}
-                    onChange={(e) => setNotifySlack(e.target.checked)}
-                    className="mr-2"
-                  />
-                  Notify People in group
-                </label>
-              </div>
-              <button
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                type="submit"
-              >
-                Submit Leave Request
-              </button>
-            </form>
-          </div>
+          <LeaveRequestForm
+            currentUserId={auth.currentUser.uid} // Pass currentUserId as a prop
+            onRequestSubmitted={() => setActiveTab("Leave Balance")}
+          />
         );
       case "Request Comp Off":
         return (
@@ -247,7 +143,9 @@ const EmployeeDashboard = () => {
         );
       case "Leave History":
         return <LeaveHistory employeeId={auth.currentUser.uid} />;
-      case "Pending Approvals":
+      case "Pending Leave Approvals":
+        return <PendingLeaveApprovals currentUserId={auth.currentUser.uid} />;
+      case "Pending Compoff Approvals":
         return <PendingApprovals currentUserId={auth.currentUser.uid} />;
       case "CompOff History":
         return <CompOffHistory employeeId={auth.currentUser.uid} />;
@@ -269,8 +167,9 @@ const EmployeeDashboard = () => {
             "Request Leave",
             "Request Comp Off",
             "Leave History",
+            "Pending Leave Approvals",
             "CompOff History",
-            "Pending Approvals",
+            "Pending Compoff Approvals",
           ].map((item) => (
             <button
               key={item}

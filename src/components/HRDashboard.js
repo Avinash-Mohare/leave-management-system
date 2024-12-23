@@ -29,29 +29,26 @@ const HRDashboard = () => {
           const leaveRequestsArray = [];
           if (snapshot.exists()) {
             const leaveRequestsData = snapshot.val();
+            console.log(leaveRequestsData);
             Object.entries(leaveRequestsData).forEach(
               ([employeeUid, requests]) => {
                 Object.entries(requests).forEach(([requestId, requestData]) => {
-                  leaveRequestsArray.push({
-                    id: requestId,
-                    employeeUid,
-                    ...requestData,
-                  });
+                  if (
+                    requestData.seniorApproval === "approved" &&
+                    requestData.managerApproval === "pending"
+                  ) {
+                    leaveRequestsArray.push({
+                      id: requestId,
+                      employeeUid, // Use employeeUid here
+                      ...requestData,
+                    });
+                  }
                 });
               }
             );
-            setLeaveRequests(leaveRequestsArray);
-            console.log(leaveRequests);
-            setFilteredRequests(
-              leaveRequestsArray.filter(
-                (request) => request.status === "pending"
-              )
-            );
-            console.log(filteredRequests);
-          } else {
-            setLeaveRequests([]);
-            setFilteredRequests([]);
           }
+          setLeaveRequests(leaveRequestsArray);
+          console.log(leaveRequestsArray);
         });
 
         // Fetch comp-off requests
@@ -192,7 +189,10 @@ const HRDashboard = () => {
     const days = calculateLeaveDays(startDate, endDate);
 
     try {
-      await update(approveRef, { status: "approved" });
+      await update(approveRef, {
+        status: "approved",
+        managerApproval: "approved", 
+      });
       await deductLeave(employeeUid, leaveType, days, isHalfDay);
       alert("Leave request approved and leave balance updated.");
     } catch (error) {
@@ -339,11 +339,15 @@ const HRDashboard = () => {
       case "Leave Requests":
         return (
           <div>
-            {filteredRequests.length > 0 ? (
-              filteredRequests.map((request) => {
+            {leaveRequests.length > 0 ? (
+              leaveRequests.map((request) => {
                 const employee = employees.find(
                   (emp) => emp.uuid === request.employeeUid
                 );
+                const seniorEmployeeName = employees.find(
+                  (emp) => emp.uuid === request.approvedBy
+                );
+
                 return (
                   <div
                     key={request.id}
@@ -352,6 +356,10 @@ const HRDashboard = () => {
                     <p>
                       <strong>Employee:</strong>{" "}
                       {employee ? employee.name : "Unknown"}
+                    </p>
+                    <p>
+                      <strong>Approved by:</strong>{" "}
+                      {seniorEmployeeName ? seniorEmployeeName.name : "Unknown"}
                     </p>
                     <p>
                       <strong>Leave Type:</strong> {request.leaveType}
