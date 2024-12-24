@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, KeyRound, Eye, EyeOff } from "lucide-react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth, database } from "../firebase";
 import { onValue, ref } from "firebase/database";
 
@@ -17,13 +17,6 @@ const Login = () => {
 
   const [userData, setUserData] = useState();
 
-  // useEffect(() => {
-  //   auth.onAuthStateChanged((user) => {
-  //     if (user) {
-  //       navigate("/dashboard");
-  //     }
-  //   });
-  // }, []);
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
       if (user) {
@@ -65,6 +58,20 @@ const Login = () => {
   };
   const toggleHandlePassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  //Password Reset functoion
+  const handlePasswordReset = async () => {
+    if (!values.email) {
+      setError("Please enter your email address to reset your password.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, values.email);
+      alert("Password reset email sent! Please check your inbox.");
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
   return (
@@ -127,6 +134,19 @@ const Login = () => {
                 disabled={submitButtonDisabled}
               />
             </div>
+
+            {/* reset password */}
+            <div className="flex flex-row align-center justify-center text-lg mt-2">
+              <p>Forgot your password?</p>
+              <button
+                type="button"
+                className="cursor-pointer text-[#d62828] ml-2"
+                onClick={handlePasswordReset}
+              >
+                Reset Password
+              </button>
+            </div>
+
             <div className="flex flex-row align-center justify-center text-lg">
               <p>Don't have an account?</p>
               <Link to="/Signup" className="cursor-pointer text-[#d62828]">

@@ -11,8 +11,17 @@ import { sendSlackNotification } from "../utils/sendSlackNotification";
 import CompOffHistory from "./CompOffHistory";
 import LeaveRequestForm from "./LeaveRequestForm";
 import PendingLeaveApprovals from "./PendingLeaveApprovals";
+import { updatePassword } from "firebase/auth";
+import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 const EmployeeDashboard = () => {
+  const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  const [reauthEmail, setReauthEmail] = useState("");
+  const [reauthPassword, setReauthPassword] = useState("");
+
   const [employeeData, setEmployeeData] = useState("");
   const [employeeNames, setEmployeeNames] = useState({});
   const [activeTab, setActiveTab] = useState("Leave Balance");
@@ -81,6 +90,25 @@ const EmployeeDashboard = () => {
     return true;
   };
 
+  // Add the change password function
+  const handleChangePassword = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const reauthenticated = await reauthenticate();
+      if (reauthenticated) {
+        try {
+          await updatePassword(user, newPassword);
+          alert("Password changed successfully!");
+          setIsChangePasswordVisible(false);
+          setNewPassword("");
+          setPasswordError("");
+        } catch (error) {
+          setPasswordError(error.message);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e, leaveRequest) => {
     e.preventDefault();
 
@@ -109,6 +137,55 @@ const EmployeeDashboard = () => {
   };
 
   const renderContent = () => {
+    if (isChangePasswordVisible) {
+      return (
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h2 className="text-2xl font-bold mb-4">Change Password</h2>
+          {passwordError && (
+            <div className="text-red-500 font-bold mb-2">{passwordError}</div>
+          )}
+          <div className="space-y-4">
+            <div>
+              <label className="block mb-1">Email:</label>
+              <input
+                type="email"
+                value={reauthEmail}
+                onChange={(e) => setReauthEmail(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label className="block mb-1">Current Password:</label>
+              <input
+                type="password"
+                value={reauthPassword}
+                onChange={(e) => setReauthPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label className="block mb-1">New Password:</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              onClick={handleChangePassword}
+            >
+              Change Password
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "Leave Balance":
         return (
@@ -154,6 +231,18 @@ const EmployeeDashboard = () => {
     }
   };
 
+  const reauthenticate = async () => {
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(reauthEmail, reauthPassword);
+    try {
+      await reauthenticateWithCredential(user, credential);
+      return true;
+    } catch (error) {
+      setPasswordError(error.message);
+      return false;
+    }
+  };
+
   return (
     <div className="w-full max-w-[1280px] flex h-screen bg-gray-100 font-oxygen">
       {/* Sidebar */}
@@ -182,6 +271,12 @@ const EmployeeDashboard = () => {
             </button>
           ))}
         </nav>
+        <button
+          className="bg-gray-100 text-black border border-gray-300 px-4 py-2 rounded-md flex items-center"
+          onClick={() => setIsChangePasswordVisible(true)}
+        >
+          Change Password
+        </button>
       </div>
 
       {/* Main Content */}
