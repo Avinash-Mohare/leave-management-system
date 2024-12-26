@@ -62,19 +62,31 @@ const CompOffRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       const employeeSnapshot = await get(
         ref(database, `employees/${currentUserId}`)
       );
-      const employeeName = employeeSnapshot.val().name;
+      // const employeeName = employeeSnapshot.val().name;
+      const employeeData = employeeSnapshot.val();
+      const employeeName = employeeData.name;
+      const employeeSlackId = employeeData.slackId;
 
       const seniorEmployeeSnapshot = await get(
         ref(database, `employees/${approvalFrom}`)
       );
-      const seniorEmployeeName = seniorEmployeeSnapshot.val().name;
+      // const seniorEmployeeName = seniorEmployeeSnapshot.val().name;
+      const seniorEmployeeData = seniorEmployeeSnapshot.val();
+      const seniorEmployeeName = seniorEmployeeData.name;
+      const seniorEmployeeSlackId = seniorEmployeeData.slackId;
 
       // Send Slack notification
-      await sendCompOffSlackNotification(
-        compOffRequest,
-        employeeName,
-        seniorEmployeeName
-      );
+      // Send Slack notification
+      try {
+        await sendCompOffSlackNotification(
+          compOffRequest,
+          employeeName, seniorEmployeeName, employeeSlackId, seniorEmployeeSlackId,
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+        // Optionally, you can show a different alert for Slack notification failure
+        alert("CompOff request submitted, but failed to send Slack notification.");
+      }
 
       alert("CompOff request submitted successfully!");
       // Reset form

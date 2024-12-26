@@ -36,6 +36,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
         }));
       setEmployees(employeeList);
     });
+
   }, [currentUserId]);
 
   const validateForm = () => {
@@ -80,19 +81,26 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       const employeeSnapshot = await get(
         ref(database, `employees/${currentUserId}`)
       );
-      const employeeName = employeeSnapshot.val().name;
+      const employeeData = employeeSnapshot.val();
+      const employeeName = employeeData.name;
+      const employeeSlackId = employeeData.slackId;
 
       const seniorEmployeeSnapshot = await get(
         ref(database, `employees/${approvalFrom}`)
       );
-      const seniorEmployeeName = seniorEmployeeSnapshot.val().name;
+      const seniorEmployeeData = seniorEmployeeSnapshot.val();
+      const seniorEmployeeName = seniorEmployeeData.name;
+      const seniorEmployeeSlackId = seniorEmployeeData.slackId;
 
-      // Send Slack notification
-      await sendSlackNotification(
-        leaveRequest,
-        employeeName,
-        seniorEmployeeName
-      );
+      try {
+        await sendSlackNotification(
+          leaveRequest,
+          employeeName, seniorEmployeeName, employeeSlackId, seniorEmployeeSlackId 
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+        alert("Leave request submitted, but failed to send Slack notification.");
+      }
 
       alert("Leave request submitted successfully!");
       // Reset form
@@ -205,6 +213,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       </form>
     </div>
   );
+  
 };
 
 export default LeaveRequestForm;

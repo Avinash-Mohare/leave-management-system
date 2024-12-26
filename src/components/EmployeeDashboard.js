@@ -13,11 +13,15 @@ import LeaveRequestForm from "./LeaveRequestForm";
 import PendingLeaveApprovals from "./PendingLeaveApprovals";
 import { updatePassword } from "firebase/auth";
 import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 const EmployeeDashboard = () => {
   const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [showReauthPassword, setShowReauthPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  
 
   const [reauthEmail, setReauthEmail] = useState("");
   const [reauthPassword, setReauthPassword] = useState("");
@@ -100,6 +104,7 @@ const EmployeeDashboard = () => {
           await updatePassword(user, newPassword);
           alert("Password changed successfully!");
           setIsChangePasswordVisible(false);
+          setActiveTab("Leave Balance");
           setNewPassword("");
           setPasswordError("");
         } catch (error) {
@@ -155,10 +160,19 @@ const EmployeeDashboard = () => {
                 required
               />
             </div>
-            <div>
-              <label className="block mb-1">Current Password:</label>
+            
+            <div className="">
+              <div className="flex">
+                <label className="block mb-1">Current Password:</label>
+                <div
+                  className="px-5 py-1 cursor-pointer"
+                  onClick={() => setShowReauthPassword(!showReauthPassword)}
+                  >
+                    {showReauthPassword ? <Eye size={20} /> : <EyeOff size={20} /> }
+                  </div>
+                </div>
               <input
-                type="password"
+                type={showReauthPassword ? "text" : "password"}
                 value={reauthPassword}
                 onChange={(e) => setReauthPassword(e.target.value)}
                 className="w-full p-2 border rounded"
@@ -166,9 +180,17 @@ const EmployeeDashboard = () => {
               />
             </div>
             <div>
-              <label className="block mb-1">New Password:</label>
+              <div className="flex">
+                <label className="block mb-1">New Password:</label>
+                <div
+                className="px-5 py-1 cursor-pointer"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <Eye size={20} />: <EyeOff size={20} />}
+                </div>
+              </div>
               <input
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full p-2 border rounded"
@@ -265,18 +287,21 @@ const EmployeeDashboard = () => {
               className={`w-full text-left p-4 hover:bg-gray-100 ${
                 activeTab === item ? "bg-gray-200" : ""
               }`}
-              onClick={() => setActiveTab(item)}
+              onClick={() => {setActiveTab(item); setIsChangePasswordVisible(false)}}
             >
               {item}
             </button>
           ))}
+          <div className="px-4 mt-4">
+            <button
+              className="bg-gray-100 text-black border border-gray-300 px-4 py-2 rounded-md flex items-center"
+              onClick={() => {setIsChangePasswordVisible(true); setActiveTab("")}}
+            >
+              Change Password
+            </button>
+          </div>
         </nav>
-        <button
-          className="bg-gray-100 text-black border border-gray-300 px-4 py-2 rounded-md flex items-center"
-          onClick={() => setIsChangePasswordVisible(true)}
-        >
-          Change Password
-        </button>
+        
       </div>
 
       {/* Main Content */}
@@ -289,8 +314,8 @@ const EmployeeDashboard = () => {
           >
             Logout <LogOut className="ml-2" size={20} />
           </button>
+          
         </nav>
-
         <div className="p-8">{renderContent()}</div>
       </div>
     </div>

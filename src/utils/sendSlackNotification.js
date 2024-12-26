@@ -1,7 +1,11 @@
 import formatDate from "./dateFormat";
 
-export const sendSlackNotification = async (leaveData, employeeName) => {
+export const sendSlackNotification = async (leaveData, employeeName,
+  seniorEmployeeName,
+  employeeSlackId,
+  seniorEmployeeSlackId) => {
   const apiUrl = process.env.REACT_APP_SLACK_NOTIFICATION_API;
+
 
   // Format the leave type
   const formattedLeaveType =
@@ -22,11 +26,11 @@ export const sendSlackNotification = async (leaveData, employeeName) => {
   // Construct the message text for Slack
   const messageText =
     `*Leave Request Notification*\n\n` +
-    `${employeeName} has applied for ${formattedLeaveType} ${dateRangeStr}.\n\n` +
+    `<@${employeeSlackId}> has applied for ${formattedLeaveType} ${dateRangeStr}.\n\n` +
+    `<@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
     `*Details:*\n` +
     `• *Date(s):* ${dateRangeStr}\n` +
-    `• *Reason:* ${leaveData.reason}\n\n` +
-    `Hello <@U06J91DKRV1>, please review this request.`;
+    `• *Reason:* ${leaveData.reason}\n\n` 
 
   const message = {
     text: messageText,
@@ -41,22 +45,21 @@ export const sendSlackNotification = async (leaveData, employeeName) => {
       body: JSON.stringify(message),
     });
 
-    console.log(message);
-
     if (!response.ok) {
       throw new Error(`Slack notification failed: ${response.statusText}`);
     }
 
-    console.log("Notification sent to Slack successfully!");
   } catch (error) {
-    console.error("Error sending notification to Slack:", error);
   }
 };
 
 export const sendCompOffSlackNotification = async (
   compOffData,
   employeeName,
-  seniorEmployeeName
+  seniorEmployeeName,
+  employeeSlackId,
+  seniorEmployeeSlackId
+
 ) => {
   const apiUrl = process.env.REACT_APP_SLACK_NOTIFICATION_API;
 
@@ -66,14 +69,13 @@ export const sendCompOffSlackNotification = async (
   // Construct the message text for Slack
   const messageText =
     `*CompOff Request Notification*\n\n` +
-    `${employeeName} has raised a CompOff request. ${seniorEmployeeName}, they have asked for approval from you.\n\n` +
+    `<@${employeeSlackId}> has raised a CompOff request. <@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
     `*Details:*\n` +
     `• *Date:* ${formatDate(compOffData.date)}\n` +
     `• *Type:* ${dayType}\n` +
     `• *Reason:* ${compOffData.reason}\n` +
-    `• *Status:* ${compOffData.status}\n\n` +
-    `Hello <@U06J91DKRV1>, please review this CompOff request.`;
-
+    `• *Status:* ${compOffData.status}\n\n`
+    
   const message = {
     text: messageText,
   };
@@ -87,17 +89,13 @@ export const sendCompOffSlackNotification = async (
       body: JSON.stringify(message),
     });
 
-    console.log("CompOff Slack Notification Message:", message);
-
     if (!response.ok) {
       throw new Error(
         `CompOff Slack notification failed: ${response.statusText}`
       );
     }
 
-    console.log("CompOff notification sent to Slack successfully!");
   } catch (error) {
-    console.error("Error sending CompOff notification to Slack:", error);
-    throw error; // Re-throw the error to be caught in the calling function
+    throw error; 
   }
 };

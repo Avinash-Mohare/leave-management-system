@@ -6,8 +6,19 @@ import { auth, database } from "../firebase";
 import { ref, onValue, update, get } from "firebase/database";
 import formatDate from "../utils/dateFormat";
 import { PlusCircle } from "lucide-react";
+import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { updatePassword } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 const HRDashboard = () => {
+  const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [reauthEmail, setReauthEmail] = useState("");
+  const [reauthPassword, setReauthPassword] = useState("");
+  const [showReauthPassword, setShowReauthPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   const [activeTab, setActiveTab] = useState("List of Employees");
   const navigate = useNavigate();
   const [managerName, setManagerName] = useState("");
@@ -126,6 +137,37 @@ const HRDashboard = () => {
 
     fetchLeaveIncrementTimestamp();
   }, []);
+
+  const reauthenticate = async () => {
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(reauthEmail, reauthPassword);
+    try {
+      await reauthenticateWithCredential(user, credential);
+      return true;
+    } catch (error) {
+      setPasswordError(error.message);
+      return false;
+    }
+  };
+
+  const handleChangePassword = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const reauthenticated = await reauthenticate();
+      if (reauthenticated) {
+        try {
+          await updatePassword(user, newPassword);
+          alert("Password changed successfully!");
+          setIsChangePasswordVisible(false);
+          setActiveTab("List of Employees");
+          setNewPassword("");
+          setPasswordError("");
+        } catch (error) {
+          setPasswordError(error.message);
+        }
+      }
+    }
+  };
 
   const calculateLeaveDays = (startDate, endDate) => {
     const start = new Date(startDate);
@@ -296,6 +338,73 @@ const HRDashboard = () => {
   };
 
   const renderContent = () => {
+
+    if (isChangePasswordVisible) {
+      return (
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h2 className="text-2xl font-bold mb-4">Change Password</h2>
+          {passwordError && (
+            <div className="text-red-500 font-bold mb-2">{passwordError}</div>
+          )}
+          <div className="space-y-4">
+            <div>
+              <label className="block mb-1">Email:</label>
+              <input
+                type="email"
+                value={reauthEmail}
+                onChange={(e) => setReauthEmail(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+
+            <div className="">
+              <div className="flex">
+                <label className="block mb-1">Current Password:</label>
+                <div
+                  className="px-5 py-1 cursor-pointer"
+                  onClick={() => setShowReauthPassword(!showReauthPassword)}
+                  >
+                    {showReauthPassword ? <Eye size={20} /> : <EyeOff size={20} /> }
+                  </div>
+                </div>
+              <input
+                type={showReauthPassword ? "text" : "password"}
+                value={reauthPassword}
+                onChange={(e) => setReauthPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <div className="flex">
+                <label className="block mb-1">New Password:</label>
+                <div
+                className="px-5 py-1 cursor-pointer"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <Eye size={20} />: <EyeOff size={20} />}
+                </div>
+              </div>
+              <input
+                type={showNewPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              onClick={handleChangePassword}
+            >
+              Change Password
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "List of Employees":
         return (
@@ -495,6 +604,14 @@ const HRDashboard = () => {
             )
           )}
         </nav>
+        <div className="px-4 mt-4">
+          <button
+            className="bg-gray-100 text-black border border-gray-300 px-4 py-2 rounded-md flex items-center"
+            onClick={() => { setIsChangePasswordVisible(true); setActiveTab(""); }}
+          >
+            Change Password
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
