@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { database } from "../firebase";
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, get } from "firebase/database";
 import formatDate from "../utils/dateFormat";
+import { sendApprovalNotification, sendHRNotification } from "../utils/sendSlackNotification";
 
 const PendingLeaveApprovals = ({ currentUserId }) => {
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -31,23 +32,55 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
     });
   }, [currentUserId]);
 
-  const handleApproval = (requestId, userId, approved) => {
+  const handleApproval = async (requestId, userId, approved) => {
     const requestRef = ref(database, `leaveRequests/${userId}/${requestId}`);
-    update(requestRef, {
-      seniorApproval: approved ? "approved" : "rejected",
-      approvedBy: currentUserId,
-      approvalTimestamp: Date.now(),
-    })
-      .then(() => {
-        alert(`Request ${approved ? "approved" : "rejected"} successfully!`);
-        setPendingRequests((prevRequests) =>
-          prevRequests.filter((request) => request.id !== requestId)
-        );
-      })
-      .catch((error) => {
-        console.error("Error updating request:", error);
-        alert("Failed to update request. Please try again.");
+    try {
+      await update(requestRef, {
+        seniorApproval: approved ? "approved" : "rejected",
+        approvedBy: currentUserId,
+        approvalTimestamp: Date.now(),
       });
+
+      const employeeSnapshot = await get(ref(database, `employees/${userId}`));
+      const employeeData = employeeSnapshot.val();
+      
+      const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
+      const approverData = approverSnapshot.val();
+
+      const requestSnapshot = await get(requestRef);
+      const requestData = requestSnapshot.val();
+
+      try {
+        if (!approved) {
+          // Send rejection notification only
+          await sendApprovalNotification(
+            requestData,
+            'leave',
+            { name: employeeData.name, slackId: employeeData.slackId },
+            { name: approverData.name, slackId: approverData.slackId },
+            approved
+          );
+        } else {
+          // If approved, send HR notification
+          await sendHRNotification(
+            requestData,
+            'leave',
+            { name: employeeData.name, slackId: employeeData.slackId },
+            { name: approverData.name, slackId: approverData.slackId }
+          );
+        }
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+      }
+
+      alert(`Request ${approved ? "approved" : "rejected"} successfully!`);
+      setPendingRequests((prevRequests) =>
+        prevRequests.filter((request) => request.id !== requestId)
+      );
+    } catch (error) {
+      console.error("Error updating request:", error);
+      alert("Failed to update request. Please try again.");
+    }
   };
 
   const fetchEmployeeNames = (userIds) => {

@@ -9,6 +9,7 @@ import { PlusCircle } from "lucide-react";
 import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { updatePassword } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
+import { sendHRActionNotification } from "../utils/sendSlackNotification";
 
 const HRDashboard = () => {
   const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
@@ -18,6 +19,7 @@ const HRDashboard = () => {
   const [reauthPassword, setReauthPassword] = useState("");
   const [showReauthPassword, setShowReauthPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [activeTab, setActiveTab] = useState("List of Employees");
   const navigate = useNavigate();
@@ -29,11 +31,16 @@ const HRDashboard = () => {
   const [canIncrementLeaves, setCanIncrementLeaves] = useState(true);
   const [leavesUpdatedDate, setLeavesUpdatedDate] = useState();
 
+  const HR_DETAILS = {
+    name: "Sonia",
+    slackId: "U06N5PTSJ4S"  // Replace with actual HR Slack ID
+  };
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setManagerName(user.displayName);
-
+        setCurrentUserId(user.uid);
         // Fetch leave requests for all employees
         const leaveRequestsRef = ref(database, `leaveRequests`);
         onValue(leaveRequestsRef, (snapshot) => {
@@ -223,11 +230,10 @@ const HRDashboard = () => {
     }
   };
 
-  const approveRequest = async (request) => {
-    const { id, employeeUid, leaveType, startDate, endDate, isHalfDay } =
-      request;
-    const approveRef = ref(database, `leaveRequests/${employeeUid}/${id}`);
 
+  const approveRequest = async (request) => {
+    const { id, employeeUid, leaveType, startDate, endDate, isHalfDay } = request;
+    const approveRef = ref(database, `leaveRequests/${employeeUid}/${id}`);
     const days = calculateLeaveDays(startDate, endDate);
 
     try {
@@ -236,6 +242,23 @@ const HRDashboard = () => {
         managerApproval: "approved", 
       });
       await deductLeave(employeeUid, leaveType, days, isHalfDay);
+
+      // Get employee data
+      const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
+      const employeeData = employeeSnapshot.val();
+
+      try {
+        await sendHRActionNotification(
+          request,
+          'leave',
+          { name: employeeData.name, slackId: employeeData.slackId },
+          HR_DETAILS,
+          true
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+      }
+
       alert("Leave request approved and leave balance updated.");
     } catch (error) {
       console.error("Error approving request:", error);
@@ -243,12 +266,30 @@ const HRDashboard = () => {
     }
   };
 
+
   const rejectRequest = async (request) => {
     const { id, employeeUid } = request;
     const rejectRef = ref(database, `leaveRequests/${employeeUid}/${id}`);
 
     try {
       await update(rejectRef, { status: "rejected" });
+
+      // Get employee data
+      const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
+      const employeeData = employeeSnapshot.val();
+
+      try {
+        await sendHRActionNotification(
+          request,
+          'leave',
+          { name: employeeData.name, slackId: employeeData.slackId },
+          HR_DETAILS,
+          false
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+      }
+
       alert("Leave request rejected.");
     } catch (error) {
       console.error("Error rejecting request:", error);
@@ -277,7 +318,23 @@ const HRDashboard = () => {
         compOffs: currentCompOffs + addDays,
       });
 
+      try {
+        await sendHRActionNotification(
+          request,
+          'compoff',
+          { 
+            name: employeeData.name, 
+            slackId: employeeData.slackId 
+          },
+          HR_DETAILS,
+          true
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+      }
+
       alert("Comp-off request approved and balance updated.");
+
     } catch (error) {
       console.error("Error approving comp-off request:", error);
       alert("Error approving comp-off request. Please try again.");
@@ -293,6 +350,27 @@ const HRDashboard = () => {
         managerApproval: "rejected",
         managerApprovalTimestamp: Date.now(),
       });
+
+      // Get employee data
+      const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
+      const employeeData = employeeSnapshot.val();
+
+      // Send notification with hardcoded HR details
+      try {
+        await sendHRActionNotification(
+          request,
+          'compoff',
+          { 
+            name: employeeData.name, 
+            slackId: employeeData.slackId 
+          },
+          HR_DETAILS,
+          false
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+      }
+
       alert("Comp-off request rejected.");
     } catch (error) {
       console.error("Error rejecting comp-off request:", error);
