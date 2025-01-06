@@ -1,5 +1,9 @@
 import formatDate from "./dateFormat";
 
+const APP_URL = 'https://leave-management-system-asqi.vercel.app/';
+const APP_LINK = `\n\n<${APP_URL} | Click here to check the request in Leave Management System>`;
+
+
 export const sendSlackNotification = async (leaveData, employeeName,
   seniorEmployeeName,
   employeeSlackId,
@@ -30,7 +34,8 @@ export const sendSlackNotification = async (leaveData, employeeName,
     `<@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
     `*Details:*\n` +
     `• *Date(s):* ${dateRangeStr}\n` +
-    `• *Reason:* ${leaveData.reason}\n\n` 
+    `• *Reason:* ${leaveData.reason}\n\n` +
+    APP_LINK;
 
   const message = {
     text: messageText,
@@ -74,7 +79,8 @@ export const sendCompOffSlackNotification = async (
     `• *Date:* ${formatDate(compOffData.date)}\n` +
     `• *Type:* ${dayType}\n` +
     `• *Reason:* ${compOffData.reason}\n` +
-    `• *Status:* ${compOffData.status}\n\n`
+    `• *Status:* ${compOffData.status}\n\n`+
+    APP_LINK;
     
   const message = {
     text: messageText,
@@ -133,7 +139,9 @@ export const sendApprovalNotification = async (
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
       `• *Type:* ${formattedLeaveType}\n` +
-      `• *Reason:* ${requestData.reason}\n`;
+      `• *Reason:* ${requestData.reason}\n`+
+      APP_LINK;
+
   } else {
     // CompOff message
     const dayType = requestData.isHalfDay ? "half day" : "full day";
@@ -144,7 +152,8 @@ export const sendApprovalNotification = async (
       `*Request Details:*\n` +
       `• *Date:* ${formatDate(requestData.date)}\n` +
       `• *Type:* ${dayType}\n` +
-      `• *Reason:* ${requestData.reason}\n`;
+      `• *Reason:* ${requestData.reason}\n`+
+      APP_LINK;
   }
 
   const message = { text: messageText };
@@ -190,7 +199,8 @@ export const sendHRNotification = async (requestData, requestType, employee, app
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
       `• *Type:* ${formattedLeaveType}\n` +
-      `• *Reason:* ${requestData.reason}\n`;
+      `• *Reason:* ${requestData.reason}\n`+
+      APP_LINK;
   } else {
     const dayType = requestData.isHalfDay ? "half day" : "full day";
     dateRangeStr = `${formatDate(requestData.date)}`;
@@ -201,7 +211,8 @@ export const sendHRNotification = async (requestData, requestType, employee, app
       `*Request Details:*\n` +
       `• *Date:* ${dateRangeStr}\n` +
       `• *Type:* ${dayType}\n` +
-      `• *Reason:* ${requestData.reason}\n`;
+      `• *Reason:* ${requestData.reason}\n`+
+      APP_LINK;
   }
 
   const message = { 
@@ -256,7 +267,8 @@ export const sendHRActionNotification = async (
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
       `• *Type:* ${formattedLeaveType}\n` +
-      `• *Reason:* ${requestData.reason}\n`;
+      `• *Reason:* ${requestData.reason}\n`+
+      APP_LINK;
   } else {
     const dayType = requestData.isHalfDay ? "half day" : "full day";
     
@@ -266,7 +278,8 @@ export const sendHRActionNotification = async (
       `*Request Details:*\n` +
       `• *Date:* ${formatDate(requestData.date)}\n` +
       `• *Type:* ${dayType}\n` +
-      `• *Reason:* ${requestData.reason}\n`;
+      `• *Reason:* ${requestData.reason}\n`+
+      APP_LINK;
   }
 
   const message = { text: messageText };

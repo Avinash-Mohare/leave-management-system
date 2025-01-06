@@ -33,7 +33,7 @@ const HRDashboard = () => {
 
   const HR_DETAILS = {
     name: "Sonia",
-    slackId: "U06N5PTSJ4S"  // Replace with actual HR Slack ID
+    slackId: "U0110JTLMNE"  // Replace with actual HR Slack ID
   };
 
   useEffect(() => {
