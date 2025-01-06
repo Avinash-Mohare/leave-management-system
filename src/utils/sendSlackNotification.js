@@ -1,7 +1,6 @@
 import formatDate from "./dateFormat";
 
 const APP_URL = 'https://leave-management-system-asqi.vercel.app/';
-const APP_LINK = `\n\n<${APP_URL} | Click here to check the request in Leave Management System>`;
 
 
 export const sendSlackNotification = async (leaveData, employeeName,
@@ -32,10 +31,10 @@ export const sendSlackNotification = async (leaveData, employeeName,
     `*Leave Request Notification*\n\n` +
     `<@${employeeSlackId}> has applied for ${formattedLeaveType} ${dateRangeStr}.\n\n` +
     `<@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
+    `Link : ${APP_URL}\n\n` +
     `*Details:*\n` +
     `• *Date(s):* ${dateRangeStr}\n` +
-    `• *Reason:* ${leaveData.reason}\n\n` +
-    APP_LINK;
+    `• *Reason:* ${leaveData.reason}\n\n`;
 
   const message = {
     text: messageText,
@@ -75,12 +74,12 @@ export const sendCompOffSlackNotification = async (
   const messageText =
     `*CompOff Request Notification*\n\n` +
     `<@${employeeSlackId}> has raised a CompOff request. <@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
+    `Link : ${APP_URL}\n\n` +
     `*Details:*\n` +
     `• *Date:* ${formatDate(compOffData.date)}\n` +
     `• *Type:* ${dayType}\n` +
     `• *Reason:* ${compOffData.reason}\n` +
-    `• *Status:* ${compOffData.status}\n\n`+
-    APP_LINK;
+    `• *Status:* ${compOffData.status}\n\n`;
     
   const message = {
     text: messageText,
@@ -136,11 +135,11 @@ export const sendApprovalNotification = async (
     messageText = 
       `*Leave Request ${status}*\n\n` +
       `<@${employee.slackId}>, your ${formattedLeaveType} request for ${dateRangeStr} has been ${isApproved ? 'approved' : 'rejected'} by <@${approver.slackId}>.${hrApprovalMessage}\n\n` +
+      `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
       `• *Type:* ${formattedLeaveType}\n` +
-      `• *Reason:* ${requestData.reason}\n`+
-      APP_LINK;
+      `• *Reason:* ${requestData.reason}\n`;
 
   } else {
     // CompOff message
@@ -149,11 +148,11 @@ export const sendApprovalNotification = async (
     messageText = 
       `*CompOff Request ${status}*\n\n` +
       `<@${employee.slackId}>, your CompOff request for ${formatDate(requestData.date)} has been ${isApproved ? 'approved' : 'rejected'} by <@${approver.slackId}>.${hrApprovalMessage}\n\n` +
+      `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date:* ${formatDate(requestData.date)}\n` +
       `• *Type:* ${dayType}\n` +
-      `• *Reason:* ${requestData.reason}\n`+
-      APP_LINK;
+      `• *Reason:* ${requestData.reason}\n`;
   }
 
   const message = { text: messageText };
@@ -196,11 +195,11 @@ export const sendHRNotification = async (requestData, requestType, employee, app
     messageText = 
       `*Leave Request Pending HR Approval*\n\n` +
       `<@${employee.slackId}>'s ${formattedLeaveType} request for ${dateRangeStr} has been approved by <@${approver.slackId}> and needs HR approval.\n\n` +
+      `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
       `• *Type:* ${formattedLeaveType}\n` +
-      `• *Reason:* ${requestData.reason}\n`+
-      APP_LINK;
+      `• *Reason:* ${requestData.reason}\n`;
   } else {
     const dayType = requestData.isHalfDay ? "half day" : "full day";
     dateRangeStr = `${formatDate(requestData.date)}`;
@@ -208,11 +207,11 @@ export const sendHRNotification = async (requestData, requestType, employee, app
     messageText = 
       `*CompOff Request Pending HR Approval*\n\n` +
       `<@${employee.slackId}>'s CompOff request (${dayType}) for ${dateRangeStr} has been approved by <@${approver.slackId}> and needs HR approval.\n\n` +
+      `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date:* ${dateRangeStr}\n` +
       `• *Type:* ${dayType}\n` +
-      `• *Reason:* ${requestData.reason}\n`+
-      APP_LINK;
+      `• *Reason:* ${requestData.reason}\n`;
   }
 
   const message = { 
@@ -264,22 +263,22 @@ export const sendHRActionNotification = async (
     messageText = 
       `*HR ${status} Leave Request*\n\n` +
       `<@${employee.slackId}>, your ${formattedLeaveType} request for ${dateRangeStr} has been ${isApproved ? 'approved' : 'rejected'} by HR (<@${hrApprover.slackId}>).\n\n` +
+      `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
       `• *Type:* ${formattedLeaveType}\n` +
-      `• *Reason:* ${requestData.reason}\n`+
-      APP_LINK;
+      `• *Reason:* ${requestData.reason}\n`;
   } else {
     const dayType = requestData.isHalfDay ? "half day" : "full day";
     
     messageText = 
       `*HR ${status} CompOff Request*\n\n` +
       `<@${employee.slackId}>, your CompOff request (${dayType}) for ${formatDate(requestData.date)} has been ${isApproved ? 'approved' : 'rejected'} by HR (<@${hrApprover.slackId}>).\n\n` +
+      `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date:* ${formatDate(requestData.date)}\n` +
       `• *Type:* ${dayType}\n` +
-      `• *Reason:* ${requestData.reason}\n`+
-      APP_LINK;
+      `• *Reason:* ${requestData.reason}\n`;
   }
 
   const message = { text: messageText };
