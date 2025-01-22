@@ -3,6 +3,7 @@ import { auth, database } from "../firebase";
 import { ref, set, update, get } from "firebase/database";
 import { useNavigate } from "react-router-dom";
 import { updateProfile } from "firebase/auth";
+import { Info } from "lucide-react";
 
 const Details = () => {
   const navigate = useNavigate();
@@ -154,7 +155,18 @@ const Details = () => {
               </div>
             </div>
             <div className="flex flex-col justify-center my-2">
-              <label>Slack ID</label>
+              <div className="flex items-center space-x-2">
+                <label>Slack ID</label>
+                <a
+                  href="https://docs.google.com/document/d/16RKPL3vUbt5g8Q9RBoPWDFDMGOFp5W-E8xw5f1AopQg/edit?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:text-purple-800 transition-colors"
+                  title="Click to learn how to find your Slack ID"
+                >
+                  <Info size={16} />
+                </a>
+              </div>
               <div className="flex flex-row items-center justify-center border-[1px] border-black rounded-[5px]">
                 <input
                   type="text"
