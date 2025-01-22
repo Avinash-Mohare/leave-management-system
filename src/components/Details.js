@@ -16,6 +16,7 @@ const Details = () => {
   const [selectedHrUid, setSelectedHrUid] = useState("");
   const [hrExists, setHrExists] = useState(false);
   const [isMumbaiTeam, setIsMumbaiTeam] = useState(false);
+  const [slackId, setSlackId] = useState("");
 
   useEffect(() => {
     // Fetch list of HRs from the database
@@ -36,7 +37,7 @@ const Details = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!firstName || !lastName || !email || !role) {
+    if (!firstName || !lastName || !email || !role || !slackId) {
       setError("Please fill all the details.");
       return;
     }
@@ -57,6 +58,7 @@ const Details = () => {
       name: firstName + " " + lastName,
       email: email,
       role: role,
+      slackId: slackId,
     };
 
     if (role === "Employee") {
@@ -148,6 +150,18 @@ const Details = () => {
                   className="focus:outline-none m-[5px]"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col justify-center my-2">
+              <label>Slack ID</label>
+              <div className="flex flex-row items-center justify-center border-[1px] border-black rounded-[5px]">
+                <input
+                  type="text"
+                  required
+                  className="focus:outline-none m-[5px]"
+                  value={slackId}
+                  onChange={(e) => setSlackId(e.target.value)}
                 />
               </div>
             </div>
