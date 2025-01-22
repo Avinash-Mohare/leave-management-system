@@ -9,7 +9,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const [reason, setReason] = useState("");
   const [approvalFrom, setApprovalFrom] = useState("");
   const [isHalfDay, setIsHalfDay] = useState(false);
-  const [leaveType, setLeaveType] = useState("casualLeave");
+  // const [leaveType, setLeaveType] = useState("casualLeave");
   const [employees, setEmployees] = useState([]);
   const [formError, setFormError] = useState("");
   const [employeeData, setEmployeeData] = useState({});
@@ -62,7 +62,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       reason: reason.trim(),
       approvalFrom,
       isHalfDay,
-      leaveType,
+      leaveType:"compOffLeave",
       status: "pending",
       timestamp: Date.now(),
       requestedBy: currentUserId,
@@ -109,7 +109,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       setReason("");
       setApprovalFrom("");
       setIsHalfDay(false);
-      setLeaveType("casualLeave");
+      // setLeaveType("casualLeave");
       setFormError("");
       onRequestSubmitted();
     } catch (error) {
@@ -125,7 +125,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
         <div className="text-red-500 font-bold mb-2">{formError}</div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
+        {/* <div>
           <label className="block mb-1">Type of Leave:</label>
           <select
             className="w-full p-2 border rounded"
@@ -134,12 +134,8 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
             required
           >
             <option value="casualLeave">Casual Leave</option>
-            {employeeData.isMumbaiTeam && (
-              <option value="sickLeave">Sick Leave</option>
-            )}
-            <option value="compOffLeave">Comp Off Leave</option>
           </select>
-        </div>
+        </div> */}
         <div>
           <label className="block mb-1">Request Leave From:</label>
           <select

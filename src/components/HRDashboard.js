@@ -313,10 +313,19 @@ const HRDashboard = () => {
       const employeeSnapshot = await get(employeeRef);
       const employeeData = employeeSnapshot.val();
       const currentCompOffs = employeeData.compOffs || 0;
+      const leaves = employeeData.leaves || 0;
       const addDays = isHalfDay ? 0.5 : 1;
-      await update(employeeRef, {
-        compOffs: currentCompOffs + addDays,
-      });
+
+      if(leaves < 0) {
+        await update(employeeRef, {
+          leaves: leaves + addDays
+        });
+      }else{
+        await update(employeeRef, {
+          compOffs: currentCompOffs + addDays,
+        });
+      }
+      
 
       try {
         await sendHRActionNotification(
@@ -548,9 +557,9 @@ const HRDashboard = () => {
                       <strong>Approved by:</strong>{" "}
                       {seniorEmployeeName ? seniorEmployeeName.name : "Unknown"}
                     </p>
-                    <p>
+                    {/* <p>
                       <strong>Leave Type:</strong> {request.leaveType}
-                    </p>
+                    </p> */}
                     {request.isHalfDay ? (
                       <>Half Day on {formatDate(request.startDate)}</>
                     ) : (
