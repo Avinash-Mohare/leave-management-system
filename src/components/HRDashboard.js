@@ -313,18 +313,12 @@ const HRDashboard = () => {
       const employeeSnapshot = await get(employeeRef);
       const employeeData = employeeSnapshot.val();
       const currentCompOffs = employeeData.compOffs || 0;
-      const leaves = employeeData.leaves || 0;
       const addDays = isHalfDay ? 0.5 : 1;
 
-      if(leaves < 0) {
-        await update(employeeRef, {
-          leaves: leaves + addDays
-        });
-      }else{
-        await update(employeeRef, {
-          compOffs: currentCompOffs + addDays,
-        });
-      }
+      
+      await update(employeeRef, {
+        compOffs: currentCompOffs + addDays,
+      });
       
 
       try {
