@@ -13,6 +13,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const [employees, setEmployees] = useState([]);
   const [formError, setFormError] = useState("");
   const [employeeData, setEmployeeData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -55,6 +56,8 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
+    setIsSubmitting(true);
 
     const leaveRequest = {
       startDate,
@@ -115,6 +118,8 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
     } catch (error) {
       console.error("Error submitting leave request:", error);
       setFormError("Failed to submit leave request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -202,6 +207,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
         </div>
         <button
           type="submit"
+          disabled={isSubmitting}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Submit Leave Request

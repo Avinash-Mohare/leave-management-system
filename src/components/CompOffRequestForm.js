@@ -10,6 +10,7 @@ const CompOffRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Fetch employees for the dropdown
@@ -38,6 +39,8 @@ const CompOffRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
+    setIsSubmitting(true);
 
     const compOffRequest = {
       date,
@@ -99,6 +102,8 @@ const CompOffRequestForm = ({ currentUserId, onRequestSubmitted }) => {
     } catch (error) {
       console.error("Error submitting CompOff request:", error);
       setFormError("Failed to submit CompOff request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -159,6 +164,7 @@ const CompOffRequestForm = ({ currentUserId, onRequestSubmitted }) => {
 
         <button
           type="submit"
+          disabled={isSubmitting}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Submit CompOff Request
