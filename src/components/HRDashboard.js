@@ -47,7 +47,6 @@ const HRDashboard = () => {
           const leaveRequestsArray = [];
           if (snapshot.exists()) {
             const leaveRequestsData = snapshot.val();
-            console.log(leaveRequestsData);
             Object.entries(leaveRequestsData).forEach(
               ([employeeUid, requests]) => {
                 Object.entries(requests).forEach(([requestId, requestData]) => {
@@ -66,7 +65,6 @@ const HRDashboard = () => {
             );
           }
           setLeaveRequests(leaveRequestsArray);
-          console.log(leaveRequestsArray);
         });
 
         // Fetch comp-off requests
@@ -272,7 +270,7 @@ const HRDashboard = () => {
     const rejectRef = ref(database, `leaveRequests/${employeeUid}/${id}`);
 
     try {
-      await update(rejectRef, { status: "rejected" });
+      await update(rejectRef, { status: "rejected", managerApproval: "rejected" });
 
       // Get employee data
       const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
