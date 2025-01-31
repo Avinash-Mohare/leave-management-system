@@ -67,9 +67,6 @@ const Details = () => {
       userData.leaves = 0;
       userData.compOffs = 0;
       userData.isMumbaiTeam = isMumbaiTeam;
-      if (isMumbaiTeam) {
-        userData.sickLeaves = 0;
-      }
     }
 
     const uid = auth.currentUser.uid;

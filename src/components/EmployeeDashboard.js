@@ -216,11 +216,7 @@ const EmployeeDashboard = () => {
             <p className="mb-2">
               Casual Leaves Remaining: {employeeData.leaves || 0}
             </p>
-            {employeeData.isMumbaiTeam && (
-              <p className="mb-2">
-                Sick Leaves Remaining: {employeeData.sickLeaves || 0}
-              </p>
-            )}
+            
             <p className="mb-2">
               Comp Offs Remaining: {employeeData.compOffs || 0}
             </p>

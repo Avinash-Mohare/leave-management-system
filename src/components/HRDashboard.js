@@ -197,9 +197,7 @@ const HRDashboard = () => {
       };
 
       // First, try to deduct from the requested leave type
-      if (leaveType === "sickLeave") {
-        remainingDays -= deductFromLeaveType("sickLeaves", remainingDays);
-      } else if (leaveType === "compOffLeave") {
+      if (leaveType === "compOffLeave") {
         remainingDays -= deductFromLeaveType("compOffs", remainingDays);
       } else if (leaveType === "casualLeave") {
         // For casual leave, first deduct from regular leaves
@@ -396,10 +394,12 @@ const HRDashboard = () => {
       employees.forEach((employee) => {
         const employeeRef = `employees/${employee.uuid}`;
 
-        updates[`${employeeRef}/leaves`] = (employee.leaves || 0) + 1;
-
-        if (employee.isMumbaiTeam) {
-          updates[`${employeeRef}/sickLeaves`] = (employee.sickLeaves || 0) + 1;
+        //handle the office people leaves here
+        if (employee.isRegularOfficeEmployee) {
+          updates[`${employeeRef}/leaves`] = (employee.leaves || 0) + 1.33;
+        }
+        else{
+          updates[`${employeeRef}/leaves`] = (employee.leaves || 0) + 1;
         }
       });
 
@@ -516,8 +516,6 @@ const HRDashboard = () => {
                 <h3 className="font-semibold">{employee.name}</h3>
                 <p className="text-sm text-gray-600">
                   Casual Leaves: {employee.leaves},
-                  {employee.isMumbaiTeam &&
-                    ` Sick Leaves: ${employee.sickLeaves},`}
                   Comp Offs: {employee.compOffs}
                 </p>
               </Link>

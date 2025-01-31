@@ -10,7 +10,6 @@ const EmployeeDetail = () => {
   const [employeeData, setEmployeeData] = useState(null);
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [newLeaves, setNewLeaves] = useState("");
-  const [newSickLeaves, setNewSickLeaves] = useState("");
   const [newCompOffs, setNewCompOffs] = useState("");
   const [activeTab, setActiveTab] = useState("Leave Balance");
 
@@ -21,7 +20,6 @@ const EmployeeDetail = () => {
         const data = snapshot.val();
         setEmployeeData(data);
         setNewLeaves(data.leaves || 0);
-        setNewSickLeaves(data.sickLeaves || 0);
         setNewCompOffs(data.compOffs || 0);
       }
     });
@@ -43,7 +41,6 @@ const EmployeeDetail = () => {
     const employeeRef = ref(database, `employees/${employeeId}`);
     update(employeeRef, {
       leaves: parseFloat(newLeaves),
-      sickLeaves: parseFloat(newSickLeaves),
       compOffs: parseFloat(newCompOffs),
     }).then(() => {
       alert("Leaves updated successfully!");
@@ -69,19 +66,6 @@ const EmployeeDetail = () => {
             className="w-full p-2 border rounded"
           />
         </div>
-        {employeeData.isMumbaiTeam && (
-          <div>
-            <label className="block mb-1 font-semibold">
-              Sick Leaves Remaining:
-            </label>
-            <input
-              type="number"
-              value={newSickLeaves}
-              onChange={(e) => setNewSickLeaves(e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        )}
         <div>
           <label className="block mb-1 font-semibold">
             Comp Offs Remaining:

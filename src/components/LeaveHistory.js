@@ -19,8 +19,7 @@ const LeaveHistory = ({ employeeId }) => {
   }, [employeeId]);
 
   const leaveTypes = [
-    { name: "Casual Leaves", type: "casualLeave" },
-    { name: "Sick Leaves", type: "sickLeave" },
+    // { name: "Casual Leaves", type: "casualLeave" },
     { name: "Comp Offs", type: "compOffLeave" },
   ];
 
@@ -33,7 +32,6 @@ const LeaveHistory = ({ employeeId }) => {
         );
         return (
           <div key={leaveType.type} className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">{leaveType.name}</h3>
             <table className="w-full border-collapse table-fixed">
               <thead>
                 <tr className="bg-gray-100">
@@ -42,7 +40,6 @@ const LeaveHistory = ({ employeeId }) => {
                   <th className="border p-2 text-left w-1/2">Reason</th>
                   <th className="border p-2 text-left w-1/6">Manager Approval</th>
                   <th className="border p-2 text-left w-1/6">HR Approval</th>
-                  <th className="border p-2 text-left w-1/6">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -73,13 +70,12 @@ const LeaveHistory = ({ employeeId }) => {
                       >
                         {leave.managerApproval}
                       </td>
-                      <td className="border p-2 w-1/6">{leave.status}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td colSpan="6" className="border p-2 text-center">
-                      No {leaveType.name.toLowerCase()} requests
+                      No Leave requests
                     </td>
                   </tr>
                 )}
