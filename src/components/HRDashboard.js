@@ -10,6 +10,7 @@ import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { updatePassword } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
 import { sendHRActionNotification } from "../utils/sendSlackNotification";
+import LeavesReport from "./LeavesReport";
 
 const HRDashboard = () => {
   const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
@@ -654,6 +655,9 @@ const HRDashboard = () => {
             )}
           </div>
         );
+
+      case "Leaves Report":
+        return <LeavesReport />
       default:
         return <div>Content for {activeTab}</div>;
     }
@@ -667,7 +671,7 @@ const HRDashboard = () => {
           <h1 className="text-xl font-semibold">{managerName}</h1>
         </div>
         <nav className="mt-4">
-          {["List of Employees", "Leave Requests", "CompOff Requests"].map(
+          {["List of Employees", "Leave Requests", "CompOff Requests", "Leaves Report"].map(
             (item) => (
               <button
                 key={item}
