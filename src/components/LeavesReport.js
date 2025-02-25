@@ -10,23 +10,62 @@ const LeavesReport = () => {
   const [currentMonth, setCurrentMonth] = useState("");
 
   useEffect(() => {
+    // const fetchLeavesData = () => {
+    //   const leaveRequestsRef = ref(database, "leaveRequests");
+    //   onValue(leaveRequestsRef, (snapshot) => {
+    //     const data = snapshot.val();
+    //     console.log("Leave Requests Data:", data); // Debugging log
+    //     const leavesByEmployee = {};
+    //     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    //     console.log("Current Month:", currentMonth); // Debugging log
+
+    //     if (data) {
+    //       Object.entries(data).forEach(([employeeUid, requests]) => {
+    //         leavesByEmployee[employeeUid] = { days: 0, dates: [] };
+    //         Object.entries(requests).forEach(([requestId, requestData]) => {
+    //           const startMonth = requestData.startDate.slice(0, 7); // YYYY-MM
+    //           const endMonth = requestData.endDate.slice(0, 7); // YYYY-MM
+    //           if ((startMonth === currentMonth || endMonth === currentMonth) && requestData.status === "approved") {
+    //             const leaveDays = calculateLeaveDaysInMonth(requestData.startDate, requestData.endDate, currentMonth, requestData.isHalfDay);
+    //             leavesByEmployee[employeeUid].days += leaveDays;
+    //             leavesByEmployee[employeeUid].dates.push({
+    //               startDate: requestData.startDate,
+    //               endDate: requestData.endDate,
+    //               isHalfDay: requestData.isHalfDay,
+    //             });
+    //           }
+    //         });
+    //       });
+    //     }
+
+    //     console.log("Leaves By Employee:", leavesByEmployee); // Debugging log
+    //     setLeavesData(leavesByEmployee);
+    //   });
+    // };
+
     const fetchLeavesData = () => {
       const leaveRequestsRef = ref(database, "leaveRequests");
       onValue(leaveRequestsRef, (snapshot) => {
         const data = snapshot.val();
         console.log("Leave Requests Data:", data); // Debugging log
         const leavesByEmployee = {};
-        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        const currentDate = new Date();
+        const currentMonth = currentDate.toISOString().slice(0, 7); // YYYY-MM
+        const lastMonth = new Date(currentDate.setMonth(currentDate.getMonth() - 1)).toISOString().slice(0, 7); // YYYY-MM
         console.log("Current Month:", currentMonth); // Debugging log
+        console.log("Last Month:", lastMonth); // Debugging log
 
         if (data) {
           Object.entries(data).forEach(([employeeUid, requests]) => {
             leavesByEmployee[employeeUid] = { days: 0, dates: [] };
             Object.entries(requests).forEach(([requestId, requestData]) => {
-              const startMonth = requestData.startDate.slice(0, 7); // YYYY-MM
-              const endMonth = requestData.endDate.slice(0, 7); // YYYY-MM
-              if ((startMonth === currentMonth || endMonth === currentMonth) && requestData.status === "approved") {
-                const leaveDays = calculateLeaveDaysInMonth(requestData.startDate, requestData.endDate, currentMonth, requestData.isHalfDay);
+              const startDate = new Date(requestData.startDate);
+              const endDate = new Date(requestData.endDate);
+              const periodStart = new Date(`${lastMonth}-25`);
+              const periodEnd = new Date(`${currentMonth}-25`);
+
+              if ((startDate <= periodEnd && endDate >= periodStart) && requestData.status === "approved") {
+                const leaveDays = calculateLeaveDaysInPeriod(requestData.startDate, requestData.endDate, periodStart, periodEnd, requestData.isHalfDay);
                 leavesByEmployee[employeeUid].days += leaveDays;
                 leavesByEmployee[employeeUid].dates.push({
                   startDate: requestData.startDate,
@@ -63,6 +102,17 @@ const LeavesReport = () => {
     fetchEmployees();
     setCurrentMonthName();
   }, []);
+
+  const calculateLeaveDaysInPeriod = (startDate, endDate, periodStart, periodEnd, isHalfDay) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const effectiveStart = start < periodStart ? periodStart : start;
+    const effectiveEnd = end > periodEnd ? periodEnd : end;
+
+    const leaveDays = Math.ceil((effectiveEnd - effectiveStart) / (1000 * 60 * 60 * 24)) + 1;
+    return isHalfDay ? 0.5 : leaveDays;
+  };
 
   const calculateLeaveDaysInMonth = (startDate, endDate, currentMonth, isHalfDay) => {
     const start = new Date(startDate);
@@ -111,7 +161,7 @@ const LeavesReport = () => {
           <tr>
             <th className="py-2 border">Employee name</th>
             <th className="py-2 border">Total Leaves taken</th>
-            {/* <th className="py-2 border">Leave Dates</th> */}
+            <th className="py-2 border">Leave Dates</th>
           </tr>
         </thead>
         <tbody>
@@ -121,7 +171,7 @@ const LeavesReport = () => {
               <tr key={employeeUid}>
                 <td className="py-2 border" align="center">{employeeData.name}</td>
                 <td className="py-2 border" align="center">{leaveData.days}</td>
-                {/* <td className="py-2 border" align="center">
+                <td className="py-2 border" align="center">
                   {leaveData.dates.length > 0 ? (
                     leaveData.dates.map((date, index) => (
                       <div key={index}>
@@ -133,7 +183,7 @@ const LeavesReport = () => {
                   ) : (
                     <div>No leaves taken</div>
                   )}
-                </td> */}
+                </td> 
               </tr>
             );
           })}
