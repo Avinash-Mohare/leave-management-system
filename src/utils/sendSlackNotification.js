@@ -237,11 +237,11 @@ export const sendHRNotification = async (requestData, requestType, employee, app
   }
 };
 
-export const sendHRActionNotification = async (
+export const sendSeniorActionNotification = async (
   requestData,
   requestType,
   employee,
-  hrApprover,
+  seniorApprover,
   isApproved
 ) => {
   const apiUrl = process.env.REACT_APP_SLACK_NOTIFICATION_API;
@@ -261,8 +261,8 @@ export const sendHRActionNotification = async (
     }
     
     messageText = 
-      `*HR ${status} Leave Request*\n\n` +
-      `<@${employee.slackId}>, your ${formattedLeaveType} request for ${dateRangeStr} has been ${isApproved ? 'approved' : 'rejected'} by HR (<@${hrApprover.slackId}>).\n\n` +
+      `*Senior ${status} Leave Request*\n\n` +
+      `<@${employee.slackId}>, your ${formattedLeaveType} request for ${dateRangeStr} has been ${isApproved ? 'approved' : 'rejected'} by (<@${seniorApprover.slackId}>).\n\n` +
       `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date(s):* ${dateRangeStr}\n` +
@@ -272,8 +272,8 @@ export const sendHRActionNotification = async (
     const dayType = requestData.isHalfDay ? "half day" : "full day";
     
     messageText = 
-      `*HR ${status} CompOff Request*\n\n` +
-      `<@${employee.slackId}>, your CompOff request (${dayType}) for ${formatDate(requestData.date)} has been ${isApproved ? 'approved' : 'rejected'} by HR (<@${hrApprover.slackId}>).\n\n` +
+      `*Senior ${status} CompOff Request*\n\n` +
+      `<@${employee.slackId}>, your CompOff request (${dayType}) for ${formatDate(requestData.date)} has been ${isApproved ? 'approved' : 'rejected'} by (<@${seniorApprover.slackId}>).\n\n` +
       `Link : ${APP_URL}\n\n` +
       `*Request Details:*\n` +
       `• *Date:* ${formatDate(requestData.date)}\n` +

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { database } from "../firebase";
 import { ref, onValue, update, get } from "firebase/database";
 import formatDate from "../utils/dateFormat";
-import { sendApprovalNotification, sendHRNotification } from "../utils/sendSlackNotification";
+import { sendApprovalNotification, sendSeniorActionNotification } from "../utils/sendSlackNotification";
 
 const PendingApprovals = ({ currentUserId }) => {
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]); 
   const [employeeNames, setEmployeeNames] = useState({});
 
   useEffect(() => {
@@ -32,57 +32,156 @@ const PendingApprovals = ({ currentUserId }) => {
     });
   }, [currentUserId]);
 
-  const handleApproval = async (requestId, userId, approved) => {
-    const requestRef = ref(database, `compOffRequests/${userId}/${requestId}`);
-    try {
-      // Update request status
-      await update(requestRef, {
-        seniorApproval: approved ? "approved" : "rejected",
-        approvedBy: currentUserId,
-        approvalTimestamp: Date.now(),
-      });
+  // const handleApproval = async (requestId, userId, approved) => {
+  //   const requestRef = ref(database, `compOffRequests/${userId}/${requestId}`);
+  //   try {
+  //     // Update request status
+  //     await update(requestRef, {
+  //       seniorApproval: approved ? "approved" : "rejected",
+  //       approvedBy: currentUserId,
+  //       approvalTimestamp: Date.now(),
+  //     });
   
-      // Fetch employee (requestor) data
-      const employeeSnapshot = await get(ref(database, `employees/${userId}`));
-      const employeeData = employeeSnapshot.val();
+  //     // Fetch employee (requestor) data
+  //     const employeeSnapshot = await get(ref(database, `employees/${userId}`));
+  //     const employeeData = employeeSnapshot.val();
       
-      // Fetch approver data
+  //     // Fetch approver data
+  //     const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
+  //     const approverData = approverSnapshot.val();
+  
+  //     // Get the request data
+  //     const requestSnapshot = await get(requestRef);
+  //     const requestData = requestSnapshot.val();
+  
+  //     // Send Slack notifications
+  //     try {
+  //       if (!approved) {
+  //         // Send rejection notification only
+  //         await sendApprovalNotification(
+  //           requestData,
+  //           'compoff',
+  //           { name: employeeData.name, slackId: employeeData.slackId },
+  //           { name: approverData.name, slackId: approverData.slackId },
+  //           approved
+  //         );
+  //       }
+  //       else {
+  //         // If approved, send HR notification
+  //         await sendHRNotification(
+  //           requestData,
+  //           'compoff',
+  //           { name: employeeData.name, slackId: employeeData.slackId },
+  //           { name: approverData.name, slackId: approverData.slackId }
+  //         );
+  //       }
+  //     } catch (slackError) {
+  //       console.error("Error sending Slack notification:", slackError);
+  //     }
+  
+  //     alert(`Request ${approved ? "approved" : "rejected"} successfully!`);
+  //   } catch (error) {
+  //     console.error("Error updating request:", error);
+  //     alert("Failed to update request. Please try again.");
+  //   }
+  // };
+
+const approveCompOffRequest = async (request) => {
+    const { id, userId, isHalfDay } = request;
+    const approveRef = ref(database, `compOffRequests/${userId}/${id}`);
+    const employeeRef = ref(database, `employees/${userId}`);
+
+    try {
+      // Update the request status
+      await update(approveRef, {
+        seniorApproval: "approved",
+        seniorApprovalTimestamp: Date.now(),
+        approvedBy: currentUserId,
+      });
+
+      // Increase the employee's compOff balance
+      const employeeSnapshot = await get(employeeRef);
+      const employeeData = employeeSnapshot.val();
+
       const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
       const approverData = approverSnapshot.val();
-  
-      // Get the request data
-      const requestSnapshot = await get(requestRef);
-      const requestData = requestSnapshot.val();
-  
-      // Send Slack notifications
+
+      const currentCompOffs = employeeData.compOffs || 0;
+      const addDays = isHalfDay ? 0.5 : 1;
+
+      
+      await update(employeeRef, {
+        compOffs: currentCompOffs + addDays,
+      });
+      
+
       try {
-        if (!approved) {
-          // Send rejection notification only
-          await sendApprovalNotification(
-            requestData,
-            'compoff',
-            { name: employeeData.name, slackId: employeeData.slackId },
-            { name: approverData.name, slackId: approverData.slackId },
-            approved
-          );
-        }
-        else {
-          // If approved, send HR notification
-          await sendHRNotification(
-            requestData,
-            'compoff',
-            { name: employeeData.name, slackId: employeeData.slackId },
-            { name: approverData.name, slackId: approverData.slackId }
-          );
-        }
+        await sendSeniorActionNotification(
+          request,
+          'compoff',
+          { 
+            name: employeeData.name, 
+            slackId: employeeData.slackId 
+          },
+          {
+            name: approverData.name,
+            slackId: approverData.slackId
+          },
+          true
+        );
       } catch (slackError) {
         console.error("Error sending Slack notification:", slackError);
       }
-  
-      alert(`Request ${approved ? "approved" : "rejected"} successfully!`);
+
+      alert("Comp-off request approved and balance updated.");
+
     } catch (error) {
-      console.error("Error updating request:", error);
-      alert("Failed to update request. Please try again.");
+      console.error("Error approving comp-off request:", error);
+      alert("Error approving comp-off request. Please try again.");
+    }
+  };
+  
+  const rejectCompOffRequest = async (request) => {
+    const { id, employeeUid } = request;
+    const rejectRef = ref(database, `compOffRequests/${employeeUid}/${id}`);
+
+    try {
+      await update(rejectRef, {
+        seniorApproval: "rejected",
+        seniorApprovalTimestamp: Date.now(),
+        approvedBy: currentUserId,
+      });
+
+      // Get employee data
+      const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
+      const employeeData = employeeSnapshot.val();
+
+      const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
+      const approverData = approverSnapshot.val();
+
+      // Send notification with hardcoded HR details
+      try {
+        await sendSeniorActionNotification(
+          request,
+          'compoff',
+          { 
+            name: employeeData.name, 
+            slackId: employeeData.slackId 
+          },
+          { 
+            name: approverData.name, 
+            slackId: approverData.slackId 
+          },
+          false
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
+      }
+
+      alert("Comp-off request rejected.");
+    } catch (error) {
+      console.error("Error rejecting comp-off request:", error);
+      alert("Error rejecting comp-off request. Please try again.");
     }
   };
 
@@ -126,7 +225,7 @@ const PendingApprovals = ({ currentUserId }) => {
               <div className="flex space-x-2">
                 <button
                   onClick={() =>
-                    handleApproval(request.id, request.userId, true)
+                    approveCompOffRequest(request)
                   }
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
                 >
@@ -134,7 +233,7 @@ const PendingApprovals = ({ currentUserId }) => {
                 </button>
                 <button
                   onClick={() =>
-                    handleApproval(request.id, request.userId, false)
+                    rejectCompOffRequest(request)
                   }
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
                 >

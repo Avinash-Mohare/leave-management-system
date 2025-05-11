@@ -39,7 +39,7 @@ const LeaveHistory = ({ employeeId }) => {
                   <th className="border p-2 text-left w-1/6">End Date</th>
                   <th className="border p-2 text-left w-1/2">Reason</th>
                   <th className="border p-2 text-left w-1/6">Manager Approval</th>
-                  <th className="border p-2 text-left w-1/6">HR Approval</th>
+                  {/* <th className="border p-2 text-left w-1/6">HR Approval</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -64,12 +64,12 @@ const LeaveHistory = ({ employeeId }) => {
                       >
                         {leave.seniorApproval}
                       </td>
-                      <td
+                      {/* <td
                         className="border p-2 w-1/2 break-words overflow-wrap-normal"
                         style={{ maxWidth: 0 }}
                       >
                         {leave.managerApproval}
-                      </td>
+                      </td> */}
                     </tr>
                   ))
                 ) : (

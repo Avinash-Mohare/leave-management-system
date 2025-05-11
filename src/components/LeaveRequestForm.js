@@ -70,7 +70,6 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       timestamp: Date.now(),
       requestedBy: currentUserId,
       seniorApproval: "pending",
-      managerApproval: "pending",
     };
 
     try {
