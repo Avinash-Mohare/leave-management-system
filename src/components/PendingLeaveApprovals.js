@@ -39,50 +39,48 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
   };
 
   const deductLeave = async (employeeUid, leaveType, days, isHalfDay) => {
-      const employeeRef = ref(database, `employees/${employeeUid}`);
-      const snapshot = await get(employeeRef);
-      const employeeData = snapshot.val();
-  
-      if (employeeData) {
-        let updatedLeaves = { ...employeeData };
-        let remainingDays = isHalfDay ? 0.5 : days;
-  
-        const deductFromLeaveType = (type, amount) => {
-          const available = updatedLeaves[type] || 0;
-          const deducted = Math.min(available, amount);
-          updatedLeaves[type] = Math.max(0, available - deducted);
-          return deducted;
-        };
-  
-        // First, try to deduct from the requested leave type
-        if (leaveType === "compOffLeave") {
-          remainingDays -= deductFromLeaveType("compOffs", remainingDays);
-        } else if (leaveType === "casualLeave") {
-          // For casual leave, first deduct from regular leaves
-          remainingDays -= deductFromLeaveType("leaves", remainingDays);
-        }
-  
-        // If there are remaining days after initial deduction
-        if (remainingDays > 0) {
-          if (leaveType === "casualLeave") {
-            // For casual leave, next deduct from compOffs
-            remainingDays -= deductFromLeaveType("compOffs", remainingDays);
-          } else {
-            // For other leave types, deduct from compOffs
-            remainingDays -= deductFromLeaveType("compOffs", remainingDays);
-          }
-        }
-  
-        // If there are still remaining days, deduct from regular leaves
-        // This applies to all leave types and allows leaves to go below 0
-        if (remainingDays > 0) {
-          updatedLeaves.leaves = (updatedLeaves.leaves || 0) - remainingDays;
-        }
-  
-        // Update the employee's leave balances
-        await update(employeeRef, updatedLeaves);
-      }
+    const employeeRef = ref(database, `employees/${employeeUid}`);
+    const snapshot = await get(employeeRef);
+    const employeeData = snapshot.val();
+
+    const leaveDeductInfo = {
+      compoffDeducted: 0,
+      casualLeavesDeducted: 0,
     };
+
+    if (employeeData) {
+      let updatedLeaves = { ...employeeData };
+      let remainingDays = isHalfDay ? 0.5 : days;
+
+      const deductFromLeaveType = (type, amount) => {
+        const available = updatedLeaves[type] || 0;
+        const deducted = Math.min(available, amount);
+        updatedLeaves[type] = Math.max(0, available - deducted);
+        return deducted;
+      };
+
+      // First, try to deduct from the requested leave type
+      if (updatedLeaves["compOffs"] > 0) {
+        const deducted = deductFromLeaveType("compOffs", remainingDays);
+        leaveDeductInfo.compoffDeducted = deducted;
+        remainingDays -= deducted;
+      }
+      if (remainingDays > 0) {
+        const deducted = deductFromLeaveType("leaves", remainingDays);
+        leaveDeductInfo.casualLeavesDeducted = deducted;
+        remainingDays -= deducted;
+      }
+
+      // If there are still remaining days, deduct from regular leaves
+      // This applies to all leave types and allows leaves to go below 0
+      if (remainingDays > 0) {
+        updatedLeaves.leaves = (updatedLeaves.leaves || 0) - remainingDays;
+        leaveDeductInfo.casualLeavesDeducted += remainingDays;
+      }
+      await update(employeeRef, updatedLeaves);
+    }
+    return leaveDeductInfo;
+  };
 
   // Function to handle approving a leave request
   const approveRequest = async (request) => {
@@ -91,12 +89,13 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
     const days = calculateLeaveDays(startDate, endDate);
 
     try {
+      const leaveDeductInfo = await deductLeave(userId, leaveType, days, isHalfDay);
       await update(approveRef, {
         status: "approved",
         seniorApproval: "approved",
-        approvedBy: currentUserId,
+        approvalTimestamp: Date.now(),
+        leaveDeductInfo,
       });
-      await deductLeave(userId, leaveType, days, isHalfDay);
 
       // Get employee data
       const employeeSnapshot = await get(ref(database, `employees/${userId}`));
@@ -129,7 +128,7 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
       const rejectRef = ref(database, `leaveRequests/${employeeUid}/${id}`);
   
       try {
-        await update(rejectRef, { status: "rejected", seniorApproval: "rejected", approvedBy: currentUserId, });
+        await update(rejectRef, { status: "rejected", seniorApproval: "rejected", approvalTimestamp: Date.now() });
   
         // Get employee data
         const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));

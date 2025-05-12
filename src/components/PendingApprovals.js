@@ -96,7 +96,7 @@ const approveCompOffRequest = async (request) => {
       await update(approveRef, {
         seniorApproval: "approved",
         seniorApprovalTimestamp: Date.now(),
-        approvedBy: currentUserId,
+        approvalTimestamp: Date.now(),
       });
 
       // Increase the employee's compOff balance
@@ -108,7 +108,6 @@ const approveCompOffRequest = async (request) => {
 
       const currentCompOffs = employeeData.compOffs || 0;
       const addDays = isHalfDay ? 0.5 : 1;
-
       
       await update(employeeRef, {
         compOffs: currentCompOffs + addDays,
@@ -149,7 +148,7 @@ const approveCompOffRequest = async (request) => {
       await update(rejectRef, {
         seniorApproval: "rejected",
         seniorApprovalTimestamp: Date.now(),
-        approvedBy: currentUserId,
+        approvalTimestamp: Date.now(),
       });
 
       // Get employee data

@@ -65,7 +65,6 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       reason: reason.trim(),
       approvalFrom,
       isHalfDay,
-      leaveType:"compOffLeave",
       status: "pending",
       timestamp: Date.now(),
       requestedBy: currentUserId,

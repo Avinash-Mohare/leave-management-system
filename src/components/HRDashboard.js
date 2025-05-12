@@ -294,89 +294,89 @@ const HRDashboard = () => {
   //   }
   // };
 
-  const approveCompOffRequest = async (request) => {
-    const { id, employeeUid, isHalfDay } = request;
-    const approveRef = ref(database, `compOffRequests/${employeeUid}/${id}`);
-    const employeeRef = ref(database, `employees/${employeeUid}`);
+  // const approveCompOffRequest = async (request) => {
+  //   const { id, employeeUid, isHalfDay } = request;
+  //   const approveRef = ref(database, `compOffRequests/${employeeUid}/${id}`);
+  //   const employeeRef = ref(database, `employees/${employeeUid}`);
 
-    try {
-      // Update the request status
-      await update(approveRef, {
-        seniorApproval: "approved",
-        seniorApprovalTimestamp: Date.now(),
-      });
+  //   try {
+  //     // Update the request status
+  //     await update(approveRef, {
+  //       seniorApproval: "approved",
+  //       seniorApprovalTimestamp: Date.now(),
+  //     });
 
-      // Increase the employee's compOff balance
-      const employeeSnapshot = await get(employeeRef);
-      const employeeData = employeeSnapshot.val();
-      const currentCompOffs = employeeData.compOffs || 0;
-      const addDays = isHalfDay ? 0.5 : 1;
+  //     // Increase the employee's compOff balance
+  //     const employeeSnapshot = await get(employeeRef);
+  //     const employeeData = employeeSnapshot.val();
+  //     const currentCompOffs = employeeData.compOffs || 0;
+  //     const addDays = isHalfDay ? 0.5 : 1;
 
       
-      await update(employeeRef, {
-        compOffs: currentCompOffs + addDays,
-      });
+  //     await update(employeeRef, {
+  //       compOffs: currentCompOffs + addDays,
+  //     });
       
 
-      try {
-        await sendSeniorActionNotification(
-          request,
-          'compoff',
-          { 
-            name: employeeData.name, 
-            slackId: employeeData.slackId 
-          },
-          HR_DETAILS,
-          true
-        );
-      } catch (slackError) {
-        console.error("Error sending Slack notification:", slackError);
-      }
+  //     try {
+  //       await sendSeniorActionNotification(
+  //         request,
+  //         'compoff',
+  //         { 
+  //           name: employeeData.name, 
+  //           slackId: employeeData.slackId 
+  //         },
+  //         HR_DETAILS,
+  //         true
+  //       );
+  //     } catch (slackError) {
+  //       console.error("Error sending Slack notification:", slackError);
+  //     }
 
-      alert("Comp-off request approved and balance updated.");
+  //     alert("Comp-off request approved and balance updated.");
 
-    } catch (error) {
-      console.error("Error approving comp-off request:", error);
-      alert("Error approving comp-off request. Please try again.");
-    }
-  };
+  //   } catch (error) {
+  //     console.error("Error approving comp-off request:", error);
+  //     alert("Error approving comp-off request. Please try again.");
+  //   }
+  // };
 
-  const rejectCompOffRequest = async (request) => {
-    const { id, employeeUid } = request;
-    const rejectRef = ref(database, `compOffRequests/${employeeUid}/${id}`);
+  // const rejectCompOffRequest = async (request) => {
+  //   const { id, employeeUid } = request;
+  //   const rejectRef = ref(database, `compOffRequests/${employeeUid}/${id}`);
 
-    try {
-      await update(rejectRef, {
-        seniorApproval: "rejected",
-        seniorApprovalTimestamp: Date.now(),
-      });
+  //   try {
+  //     await update(rejectRef, {
+  //       seniorApproval: "rejected",
+  //       seniorApprovalTimestamp: Date.now(),
+  //     });
 
-      // Get employee data
-      const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
-      const employeeData = employeeSnapshot.val();
+  //     // Get employee data
+  //     const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
+  //     const employeeData = employeeSnapshot.val();
 
-      // Send notification with hardcoded HR details
-      try {
-        await sendSeniorActionNotification(
-          request,
-          'compoff',
-          { 
-            name: employeeData.name, 
-            slackId: employeeData.slackId 
-          },
-          HR_DETAILS,
-          false
-        );
-      } catch (slackError) {
-        console.error("Error sending Slack notification:", slackError);
-      }
+  //     // Send notification with hardcoded HR details
+  //     try {
+  //       await sendSeniorActionNotification(
+  //         request,
+  //         'compoff',
+  //         { 
+  //           name: employeeData.name, 
+  //           slackId: employeeData.slackId 
+  //         },
+  //         HR_DETAILS,
+  //         false
+  //       );
+  //     } catch (slackError) {
+  //       console.error("Error sending Slack notification:", slackError);
+  //     }
 
-      alert("Comp-off request rejected.");
-    } catch (error) {
-      console.error("Error rejecting comp-off request:", error);
-      alert("Error rejecting comp-off request. Please try again.");
-    }
-  };
+  //     alert("Comp-off request rejected.");
+  //   } catch (error) {
+  //     console.error("Error rejecting comp-off request:", error);
+  //     alert("Error rejecting comp-off request. Please try again.");
+  //   }
+  // };
 
   const handleLogout = () => {
     signOut(auth)
