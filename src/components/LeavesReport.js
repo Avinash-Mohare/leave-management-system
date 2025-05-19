@@ -11,6 +11,7 @@ const LeavesReport = () => {
   const [employees, setEmployees] = useState({});
   const [currentMonth, setCurrentMonth] = useState("");
   const [openingBalanceData, setOpeningBalanceData] = useState({});
+  const [isTwentyFifth, setIsTwentyFifth] = useState(false);
 
   useEffect(() => {
     const fetchOpeningLeaveBalance = async () => {
@@ -127,6 +128,9 @@ const LeavesReport = () => {
       setCurrentMonth(`${monthName} ${year}`);
     };
 
+    const today = new Date();
+    setIsTwentyFifth(today.getDate() === 25);
+
     fetchLeavesData();
     fetchCompOffData();
     fetchEmployees();
@@ -224,8 +228,8 @@ const LeavesReport = () => {
       const openingCompOffBalance = data[uid]?.compOffs || 0;
 
       const compOffAdjusted =
-        leaveAvailed > openingCompOffBalance
-          ? openingCompOffBalance
+        leaveAvailed > openingCompOffBalance + currentMonthCreditedCompoff
+          ? openingCompOffBalance + currentMonthCreditedCompoff
           : leaveAvailed;
 
       const closingCompOff =
@@ -238,7 +242,7 @@ const LeavesReport = () => {
         index++,
         emp.empCode || "", // Adjust key as needed
         emp.name,
-        emp.workingDays || 30, // Optional fields
+        emp.workingDays || "", // Optional fields
         emp.lop || 0,
         openingLeaveBalance,
         openingCompOffBalance,
@@ -318,8 +322,13 @@ const LeavesReport = () => {
         </tbody>
       </table>
       <button
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4"
+        className={`px-4 py-2 rounded mt-4 text-white ${
+          isTwentyFifth
+            ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+            : "bg-gray-400 cursor-not-allowed"
+        }`}
         onClick={handleOpeneingLeaveBalance}
+        disabled={!isTwentyFifth}
       >
         Update Opening Leave Balance
       </button>
