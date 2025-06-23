@@ -113,10 +113,27 @@ const PendingApprovals = ({ currentUserId }) => {
       const approverData = approverSnapshot.val();
 
       const currentCompOffs = employeeData.compOffs || 0;
+      const currentLeaves = employeeData.leaves || 0;
       const addDays = isHalfDay ? 0.5 : 1;
 
+      let newLeaves = currentLeaves;
+      let newCompOffs = currentCompOffs;
+
+      if (currentLeaves < 0) {
+        // Amount needed to bring leaves to zero
+        const leavesToZero = Math.min(addDays, Math.abs(currentLeaves));
+        newLeaves = currentLeaves + leavesToZero;
+        // Remaining days to add to compOffs
+        const compOffToAdd = addDays - leavesToZero;
+        newCompOffs = currentCompOffs + (compOffToAdd > 0 ? compOffToAdd : 0);
+      } else {
+        // If leaves are not negative, add all to compOffs
+        newCompOffs = currentCompOffs + addDays;
+      }
+
       await update(employeeRef, {
-        compOffs: currentCompOffs + addDays,
+        compOffs: newCompOffs,
+        leaves: newLeaves,
       });
 
       try {
