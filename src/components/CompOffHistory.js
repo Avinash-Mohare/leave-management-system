@@ -44,7 +44,7 @@ const CompOffHistory = ({ employeeId }) => {
             <th className="border p-2 text-left w-1/4">Reason</th>
             <th className="border p-2 text-left w-1/6">Approval From</th>
             <th className="border p-2 text-left w-1/6">Senior Approval</th>
-            <th className="border p-2 text-left w-1/6">HR Approval</th>
+            {/* <th className="border p-2 text-left w-1/6">HR Approval</th> */}
           </tr>
         </thead>
         <tbody>
@@ -66,7 +66,7 @@ const CompOffHistory = ({ employeeId }) => {
                   {employeeNames[request.approvalFrom] || "Unknown"}
                 </td>
                 <td className="border p-2 w-1/6">{request.seniorApproval}</td>
-                <td className="border p-2 w-1/6">{request.managerApproval}</td>
+                {/* <td className="border p-2 w-1/6">{request.managerApproval}</td> */}
               </tr>
             ))
           ) : (
