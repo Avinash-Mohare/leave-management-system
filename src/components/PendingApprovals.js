@@ -162,8 +162,8 @@ const PendingApprovals = ({ currentUserId }) => {
   };
 
   const rejectCompOffRequest = async (request) => {
-    const { id, employeeUid } = request;
-    const rejectRef = ref(database, `compOffRequests/${employeeUid}/${id}`);
+    const { id, userId } = request;
+    const rejectRef = ref(database, `compOffRequests/${userId}/${id}`);
 
     try {
       await update(rejectRef, {
@@ -175,7 +175,7 @@ const PendingApprovals = ({ currentUserId }) => {
 
       // Get employee data
       const employeeSnapshot = await get(
-        ref(database, `employees/${employeeUid}`)
+        ref(database, `employees/${userId}`)
       );
       const employeeData = employeeSnapshot.val();
 
