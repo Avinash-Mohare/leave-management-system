@@ -124,36 +124,36 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
 
   // Function to handle rejecting a leave request
   const rejectRequest = async (request) => {
-      const { id, employeeUid } = request;
-      const rejectRef = ref(database, `leaveRequests/${employeeUid}/${id}`);
-  
-      try {
-        await update(rejectRef, { status: "rejected", seniorApproval: "rejected", approvalTimestamp: Date.now() });
-  
-        // Get employee data
-        const employeeSnapshot = await get(ref(database, `employees/${employeeUid}`));
-        const employeeData = employeeSnapshot.val();
+    const { id, userId } = request;
+    const rejectRef = ref(database, `leaveRequests/${userId}/${id}`);
 
-        const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
-        const approverData = approverSnapshot.val();
-  
-        try {
-          await sendSeniorActionNotification(
-            request,
-            'leave',
-            { name: employeeData.name, slackId: employeeData.slackId },
-            { name: approverData.name, slackId: approverData.slackId },
-            false
-          );
-        } catch (slackError) {
-          console.error("Error sending Slack notification:", slackError);
-        }
-        alert("Leave request rejected.");
-      } catch (error) {
-        console.error("Error rejecting request:", error);
-        alert("Error rejecting request. Please try again.");
+    try {
+      await update(rejectRef, { status: "rejected", seniorApproval: "rejected", approvalTimestamp: Date.now() });
+
+      // Get employee data
+      const employeeSnapshot = await get(ref(database, `employees/${userId}`));
+      const employeeData = employeeSnapshot.val();
+
+      const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
+      const approverData = approverSnapshot.val();
+
+      try {
+        await sendSeniorActionNotification(
+          request,
+          'leave',
+          { name: employeeData.name, slackId: employeeData.slackId },
+          { name: approverData.name, slackId: approverData.slackId },
+          false
+        );
+      } catch (slackError) {
+        console.error("Error sending Slack notification:", slackError);
       }
-    };
+      alert("Leave request rejected.");
+    } catch (error) {
+      console.error("Error rejecting request:", error);
+      alert("Error rejecting request. Please try again.");
+    }
+  };
 
   // const handleApproval = async (requestId, userId, approved) => {
   //   const requestRef = ref(database, `leaveRequests/${userId}/${requestId}`);
