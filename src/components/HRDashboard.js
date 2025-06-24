@@ -52,6 +52,8 @@ const HRDashboard = () => {
       } else {
         navigate("/login");
       }
+
+      console.log("Current User ID:", user ? user.uid : "No user logged in");
     });
 
     return () => unsubscribe();
@@ -131,12 +133,13 @@ const HRDashboard = () => {
       if (!confirmAction) return;
 
       const updates = {};
+      const currentMonthNumber = new Date().getMonth() + 1;
+      const increment = currentMonthNumber % 3 === 0 ? 1.4 : 1.3;
       employees.forEach((employee) => {
         const employeeRef = `employees/${employee.uuid}`;
-
         //handle the office people leaves here
         if (employee.isRegularOfficeEmployee) {
-          updates[`${employeeRef}/leaves`] = (employee.leaves || 0) + 1.33;
+          updates[`${employeeRef}/leaves`] = (employee.leaves || 0) + increment;
         } else {
           updates[`${employeeRef}/leaves`] = (employee.leaves || 0) + 1;
         }
@@ -250,17 +253,51 @@ const HRDashboard = () => {
             </div>
 
             {employees.map((employee) => (
-              <Link
+              
+
+              <div
                 key={employee.uuid}
-                to={`/employee/${employee.uuid}`}
-                className="block p-4 border-b last:border-b-0 hover:bg-gray-50"
+                className="flex items-center justify-between p-4 border-b last:border-b-0 hover:bg-gray-50"
               >
-                <h3 className="font-semibold">{employee.name}</h3>
-                <p className="text-sm text-gray-600">
-                  Casual Leaves: {employee.leaves}, Comp Offs:{" "}
-                  {employee.compOffs}
-                </p>
-              </Link>
+                <Link
+                  to={`/employee/${employee.uuid}`}
+                  className="flex-1"
+                >
+                  <h3 className="font-semibold">{employee.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    Casual Leaves: {employee.leaves}, Comp Offs: {employee.compOffs}
+                  </p>
+                  <span
+                    className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
+                      employee.isRegularOfficeEmployee
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {employee.isRegularOfficeEmployee
+                      ? "Regular Office Employee"
+                      : "Not Regular Office"}
+                  </span>
+                </Link>
+                <div className="ml-4 flex items-center">
+                  <label className="flex items-center cursor-pointer">
+                    <span className="mr-2 text-xs">Regular Office</span>
+                    <input
+                      type="checkbox"
+                      checked={!!employee.isRegularOfficeEmployee}
+                      onChange={() => handleToggleRegularOffice(employee)}
+                      className="form-checkbox h-5 w-5 text-blue-600"
+                    />
+                  </label>
+                  <button
+                    onClick={() => handleDeleteEmployee(employee)}
+                    className="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    title="Delete Employee"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         );
@@ -268,6 +305,39 @@ const HRDashboard = () => {
         return <LeavesReport />;
       default:
         return <div>Content for {activeTab}</div>;
+    }
+  };
+
+  const handleToggleRegularOffice = async (employee) => {
+  try {
+    await update(ref(database, `employees/${employee.uuid}`), {
+      isRegularOfficeEmployee: !employee.isRegularOfficeEmployee,
+    });
+  } catch (error) {
+    alert("Failed to update regular office status.");
+    console.error(error);
+  }
+  };
+
+  const handleDeleteEmployee = async (employee) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${employee.name} and all their data? This action cannot be undone.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      // Remove from all relevant database paths
+      const updates = {};
+      updates[`employees/${employee.uuid}`] = null;
+      updates[`leaveRequests/${employee.uuid}`] = null;
+      updates[`compOffRequests/${employee.uuid}`] = null;
+      updates[`hr-employee/${currentUserId}/managedEmployees/${employee.uuid}`] = null;
+
+      await update(ref(database), updates);
+      alert("Employee and all related data deleted successfully.");
+    } catch (error) {
+      alert("Failed to delete employee. Please try again.");
+      console.error(error);
     }
   };
 

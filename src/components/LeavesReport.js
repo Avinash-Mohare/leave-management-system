@@ -197,16 +197,13 @@ const LeavesReport = () => {
         "Sr. No.",
         "Emp.Code",
         "Empl.Name",
-        "Working Days",
-        "LOP",
+        "Status (Active/Hold/Current)",
+        "No. of Days Present (Current Month)",
+        "Total Attendance",
         "Opening leave balance",
-        "Opening Comp .off Balance",
-        "Leave Availed",
-        "Current Month Credited Comp.off",
-        "Comp. off adjusted",
-        "Closing Comp .off Balance",
-        "Adjusted Availed Leaves",
-        "Closing Leave balance",
+        "Accrued during current month",
+        "Leave Taken",
+        "Leave closing balance",
       ],
     ];
 
@@ -215,50 +212,33 @@ const LeavesReport = () => {
 
     // Loop through employees and calculate leave stats from leavesData
     Object.entries(employees).forEach(([uid, emp]) => {
-      const leaves = leavesData[uid] || {};
-      const compOffs = compOffData[uid] || {};
-
-      // Calculate leave days and comp off days
-      let leaveAvailed = leaves.days || 0;
-      let currentMonthCreditedCompoff = compOffs.days || 0;
-
+      const currentMonthNumber = new Date().getMonth() + 1; // Get current month number (1-12)
+      const leaves = emp.leaves;
       const data = Object.values(openingBalanceData)[0];
-
       const openingLeaveBalance = data[uid]?.leaves || 0;
-      const openingCompOffBalance = data[uid]?.compOffs || 0;
-
-      const compOffAdjusted =
-        leaveAvailed > openingCompOffBalance + currentMonthCreditedCompoff
-          ? openingCompOffBalance + currentMonthCreditedCompoff
-          : leaveAvailed;
-
-      const closingCompOff =
-        currentMonthCreditedCompoff + openingCompOffBalance - compOffAdjusted;
-
-      const adjustedAvailedLeaves = leaveAvailed - compOffAdjusted;
-      const closingLeaveBalance = openingLeaveBalance - adjustedAvailedLeaves;
+      const closingLeaveBalance = leaves;
+      const accruedLeaves = emp.isRegularOfficeEmployee ? (currentMonthNumber % 3 == 0 ? "1.4" : "1.3") : "1";
+      const leavesTaken = Math.max(openingLeaveBalance - closingLeaveBalance, 0);
 
       worksheetData.push([
         index++,
-        emp.empCode || "", // Adjust key as needed
+        emp.empCode || "", 
         emp.name,
-        emp.workingDays || "", // Optional fields
-        emp.lop || 0,
+        emp.status || "Active",
+        "",
+        "",
         openingLeaveBalance,
-        openingCompOffBalance,
-        leaveAvailed,
-        currentMonthCreditedCompoff,
-        compOffAdjusted,
-        closingCompOff,
-        adjustedAvailedLeaves,
-        closingLeaveBalance,
+        accruedLeaves,
+        leavesTaken,
+        closingLeaveBalance
       ]);
     });
 
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
-    XLSX.writeFile(workbook, "AttendanceReport.xlsx");
+    const currentMonthName = new Date().toLocaleString("default", { month: "long", year: "numeric" });
+    XLSX.writeFile(workbook, `Attendance Report ${currentMonthName}.xlsx`);
   };
 
   const handleOpeneingLeaveBalance = async () => {
@@ -282,7 +262,7 @@ const LeavesReport = () => {
       >
         Download Excel
       </button>
-      <table className="min-w-full bg-white">
+      {/* <table className="min-w-full bg-white">
         <thead>
           <tr>
             <th className="py-2 border">Employee name</th>
@@ -320,7 +300,7 @@ const LeavesReport = () => {
             );
           })}
         </tbody>
-      </table>
+      </table> */}
       <button
         className={`px-4 py-2 rounded mt-4 text-white ${
           isTwentyFifth

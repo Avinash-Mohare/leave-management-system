@@ -103,7 +103,7 @@ const PendingApprovals = ({ currentUserId }) => {
         status: "approved",
       });
 
-      // Increase the employee's compOff balance
+      // Upate the employee's compOff balance and leaves balance
       const employeeSnapshot = await get(employeeRef);
       const employeeData = employeeSnapshot.val();
 

@@ -15,6 +15,15 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const [employeeData, setEmployeeData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = today.getDate();
+  const maxSelectableDate =
+    day <= 25
+      ? `${year}-${month}-25`
+      : ""; // Disable selection after the 25th of the month 
+
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
@@ -177,6 +186,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              max={maxSelectableDate || undefined}
             />
           </div>
           {!isHalfDay && (
@@ -189,6 +199,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
                 className="w-full p-2 border rounded"
                 min={startDate}
                 required
+                max={maxSelectableDate || undefined} 
               />
             </div>
           )}

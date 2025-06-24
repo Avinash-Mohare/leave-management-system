@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, set } from "firebase/database";
 import { database } from "../firebase";
 import formatDate from "../utils/dateFormat";
 import LeaveHistory from "./LeaveHistory";
@@ -12,6 +12,7 @@ const EmployeeDetail = () => {
   const [newLeaves, setNewLeaves] = useState("");
   const [newCompOffs, setNewCompOffs] = useState("");
   const [activeTab, setActiveTab] = useState("Leave Balance");
+  const [newEmpCode, setNewEmpCode] = useState("");
 
   useEffect(() => {
     const employeeRef = ref(database, `employees/${employeeId}`);
@@ -21,6 +22,7 @@ const EmployeeDetail = () => {
         setEmployeeData(data);
         setNewLeaves(data.leaves || 0);
         setNewCompOffs(data.compOffs || 0);
+        setNewEmpCode(data.empCode || "");
       }
     });
   }, [employeeId]);
@@ -47,6 +49,15 @@ const EmployeeDetail = () => {
     });
   };
 
+  const handleEmpCodeUpdate = () => {
+    const employeeRef = ref(database, `employees/${employeeId}`);
+    update(employeeRef, {
+      empCode: newEmpCode,
+    }).then(() => {
+      alert("Employee code updated successfully!");
+    });
+  };
+
   if (!employeeData) {
     return <div>Loading...</div>;
   }
@@ -55,6 +66,25 @@ const EmployeeDetail = () => {
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4">Leave Balance</h2>
       <div className="space-y-4">
+        <div className="flex items-end space-x-2">
+          <div className="flex-1">
+            <label className="block mb-1 font-semibold">
+              Employee Code:
+            </label>
+            <input
+              type="text"
+              value={newEmpCode}
+              onChange={(e) => setNewEmpCode(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <button
+            onClick={handleEmpCodeUpdate}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-1"
+          >
+            Save
+          </button>
+        </div>
         <div>
           <label className="block mb-1 font-semibold">
             Total Leaves Remaining:
