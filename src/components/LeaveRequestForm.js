@@ -1,40 +1,39 @@
 import React, { useState, useEffect } from "react";
-import { database, auth } from "../firebase";
-import { ref, push, set, onValue, get } from "firebase/database";
+import { database } from "../firebase";
+import { ref, push, set, get, update } from "firebase/database";
+import { deductLeave } from "../utils/deductLeave";
 import { sendSlackNotification } from "../utils/sendSlackNotification";
 
 const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
-  const [approvalFrom, setApprovalFrom] = useState("");
   const [isHalfDay, setIsHalfDay] = useState(false);
   // const [leaveType, setLeaveType] = useState("casualLeave");
-  const [employees, setEmployees] = useState([]);
+  // const [employees, setEmployees] = useState([]);
   const [formError, setFormError] = useState("");
-  const [employeeData, setEmployeeData] = useState({});
+  // const [employeeData, setEmployeeData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = today.getDate();
-  const maxSelectableDate =
-    day <= 25
-      ? `${year}-${month}-25`
-      : ""; // Disable selection after the 25th of the month 
+  const maxSelectableDate = day <= 25 ? `${year}-${month}-25` : ""; // Disable selection after the 25th of the month
 
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      const employeeRef = ref(database, `employees/${user.uid}`);
-      onValue(employeeRef, (snapshot) => {
-        const data = snapshot.val();
-        setEmployeeData(data);
-      });
-    }
+  // * Removing dropdown of employees from whom the permission was required to take leaves.
+  // useEffect(() => {
+  // const user = auth.currentUser;
+  // if (user) {
+  //   const employeeRef = ref(database, `employees/${user.uid}`);
+  //   onValue(employeeRef, (snapshot) => {
+  //     const data = snapshot.val();
+  //     setEmployeeData(data);
+  //   });
+  // }
 
-    // Fetch employees for the dropdown
+  /*
+    Fetch employees for the dropdown
     const employeesRef = ref(database, "employees");
     onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
@@ -46,11 +45,16 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
         }));
       setEmployees(employeeList);
     });
-
-  }, [currentUserId]);
+    */
+  // }, []);
 
   const validateForm = () => {
-    if (!startDate || (!isHalfDay && !endDate) || !reason.trim() || !approvalFrom) {
+    if (
+      !startDate ||
+      (!isHalfDay && !endDate) ||
+      !reason.trim()
+      // !approvalFrom
+    ) {
       setFormError("Please fill in all fields");
       return false;
     }
@@ -72,12 +76,12 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       startDate,
       endDate: isHalfDay ? startDate : endDate,
       reason: reason.trim(),
-      approvalFrom,
+      // approvalFrom,
       isHalfDay,
-      status: "pending",
+      status: "approved",
       timestamp: Date.now(),
       requestedBy: currentUserId,
-      seniorApproval: "pending",
+      // seniorApproval: "pending",
     };
 
     try {
@@ -87,6 +91,34 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
 
       await set(newLeaveRequestRef, leaveRequest);
 
+      // Deduct leaves immediately since senior approval is removed.
+      try {
+        const days = isHalfDay
+          ? 0.5
+          : Math.ceil(
+              (new Date(leaveRequest.endDate) -
+                new Date(leaveRequest.startDate)) /
+                (1000 * 60 * 60 * 24)
+            ) + 1;
+        const leaveDeductInfo = await deductLeave(
+          currentUserId,
+          null,
+          days,
+          isHalfDay
+        );
+        // Attach deduction info and approval timestamp to the saved request
+        await update(newLeaveRequestRef, {
+          leaveDeductInfo,
+          approvalTimestamp: Date.now(),
+        });
+      } catch (deductError) {
+        console.error("Error deducting leaves on submit:", deductError);
+        // continue — the request was created, but deduction failed
+        alert(
+          "Leave request submitted, but failed to deduct leave balance. Please contact HR."
+        );
+      }
+
       // Get the names for the Slack notification
       const employeeSnapshot = await get(
         ref(database, `employees/${currentUserId}`)
@@ -95,21 +127,26 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       const employeeName = employeeData.name;
       const employeeSlackId = employeeData.slackId;
 
-      const seniorEmployeeSnapshot = await get(
-        ref(database, `employees/${approvalFrom}`)
-      );
-      const seniorEmployeeData = seniorEmployeeSnapshot.val();
-      const seniorEmployeeName = seniorEmployeeData.name;
-      const seniorEmployeeSlackId = seniorEmployeeData.slackId;
+      // const seniorEmployeeSnapshot = await get(
+      //   ref(database, `employees/${approvalFrom}`)
+      // );
+      // const seniorEmployeeData = seniorEmployeeSnapshot.val();
+      // const seniorEmployeeName = seniorEmployeeData.name;
+      // const seniorEmployeeSlackId = seniorEmployeeData.slackId;
 
       try {
         await sendSlackNotification(
           leaveRequest,
-          employeeName, seniorEmployeeName, employeeSlackId, seniorEmployeeSlackId 
+          employeeName,
+          // seniorEmployeeName,
+          employeeSlackId
+          // seniorEmployeeSlackId
         );
       } catch (slackError) {
         console.error("Error sending Slack notification:", slackError);
-        alert("Leave request submitted, but failed to send Slack notification.");
+        alert(
+          "Leave request submitted, but failed to send Slack notification."
+        );
       }
 
       alert("Leave request submitted successfully!");
@@ -117,7 +154,6 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       setStartDate("");
       setEndDate("");
       setReason("");
-      setApprovalFrom("");
       setIsHalfDay(false);
       // setLeaveType("casualLeave");
       setFormError("");
@@ -148,7 +184,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
             <option value="casualLeave">Casual Leave</option>
           </select>
         </div> */}
-        <div>
+        {/* <div>
           <label className="block mb-1">Request Leave From:</label>
           <select
             value={approvalFrom}
@@ -163,7 +199,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
         <div>
           <label className="flex items-center">
             <input
@@ -199,7 +235,7 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
                 className="w-full p-2 border rounded"
                 min={startDate}
                 required
-                max={maxSelectableDate || undefined} 
+                max={maxSelectableDate || undefined}
               />
             </div>
           )}
@@ -224,7 +260,6 @@ const LeaveRequestForm = ({ currentUserId, onRequestSubmitted }) => {
       </form>
     </div>
   );
-  
 };
 
 export default LeaveRequestForm;

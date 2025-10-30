@@ -26,66 +26,59 @@ const LeaveHistory = ({ employeeId }) => {
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4">Leave History</h2>
-      {leaveTypes.map((leaveType) => {
-        const filteredRequests = leaveRequests.filter(
-          (leave) => leave.leaveType === leaveType.type
-        );
-        return (
-          <div key={leaveType.type} className="mb-6">
-            <table className="w-full border-collapse table-fixed">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2 text-left w-1/6">Start Date</th>
-                  <th className="border p-2 text-left w-1/6">End Date</th>
-                  <th className="border p-2 text-left w-1/2">Reason</th>
-                  <th className="border p-2 text-left w-1/6">Manager Approval</th>
-                  {/* <th className="border p-2 text-left w-1/6">HR Approval</th> */}
+      <div className="mb-6">
+        <table className="w-full border-collapse table-fixed">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border p-2 text-left w-1/4">Start Date</th>
+              <th className="border p-2 text-left w-1/4">End Date</th>
+              <th className="border p-2 text-left w-1/2">Reason</th>
+              {/* <th className="border p-2 text-left w-1/6">Manager Approval</th> */}
+              {/* <th className="border p-2 text-left w-1/6">HR Approval</th> */}
+            </tr>
+          </thead>
+          <tbody>
+            {leaveRequests.length > 0 ? (
+              leaveRequests.map((leave, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="border p-2 w-1/6">
+                    {formatDate(leave.startDate)}
+                  </td>
+                  <td className="border p-2 w-1/6">
+                    {formatDate(leave.endDate)}
+                  </td>
+                  <td
+                    className="border p-2 w-1/2 break-words overflow-wrap-normal"
+                    style={{ maxWidth: 0 }}
+                  >
+                    {leave.reason}
+                  </td>
+                  {/* <td
+                      className="border p-2 w-1/2 break-words overflow-wrap-normal"
+                      style={{ maxWidth: 0 }}
+                    >
+                      {leave.seniorApproval}
+                    </td> */}
+                  {/* <td
+                      className="border p-2 w-1/2 break-words overflow-wrap-normal"
+                      style={{ maxWidth: 0 }}
+                    >
+                      {leave.managerApproval}
+                    </td> */}
                 </tr>
-              </thead>
-              <tbody>
-                {filteredRequests.length > 0 ? (
-                  filteredRequests.map((leave, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="border p-2 w-1/6">
-                        {formatDate(leave.startDate)}
-                      </td>
-                      <td className="border p-2 w-1/6">
-                        {formatDate(leave.endDate)}
-                      </td>
-                      <td
-                        className="border p-2 w-1/2 break-words overflow-wrap-normal"
-                        style={{ maxWidth: 0 }}
-                      >
-                        {leave.reason}
-                      </td>
-                      <td
-                        className="border p-2 w-1/2 break-words overflow-wrap-normal"
-                        style={{ maxWidth: 0 }}
-                      >
-                        {leave.seniorApproval}
-                      </td>
-                      {/* <td
-                        className="border p-2 w-1/2 break-words overflow-wrap-normal"
-                        style={{ maxWidth: 0 }}
-                      >
-                        {leave.managerApproval}
-                      </td> */}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="border p-2 text-center">
-                      No Leave requests
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="border p-2 text-center">
+                  No Leave requests
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
-  
+
 export default LeaveHistory;

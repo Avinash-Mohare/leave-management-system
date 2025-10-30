@@ -21,7 +21,6 @@ const EmployeeDashboard = () => {
   const [passwordError, setPasswordError] = useState("");
   const [showReauthPassword, setShowReauthPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  
 
   const [reauthEmail, setReauthEmail] = useState("");
   const [reauthPassword, setReauthPassword] = useState("");
@@ -56,7 +55,10 @@ const EmployeeDashboard = () => {
         if (snapshot.exists()) {
           const employees = snapshot.val();
           const namesMap = Object.fromEntries(
-            Object.entries(employees).map(([id, employee]) => [id, employee.name])
+            Object.entries(employees).map(([id, employee]) => [
+              id,
+              employee.name,
+            ])
           );
           setEmployeeNames(namesMap);
         }
@@ -160,17 +162,21 @@ const EmployeeDashboard = () => {
                 required
               />
             </div>
-            
+
             <div className="">
               <div className="flex">
                 <label className="block mb-1">Current Password:</label>
                 <div
                   className="px-5 py-1 cursor-pointer"
                   onClick={() => setShowReauthPassword(!showReauthPassword)}
-                  >
-                    {showReauthPassword ? <Eye size={20} /> : <EyeOff size={20} /> }
-                  </div>
+                >
+                  {showReauthPassword ? (
+                    <Eye size={20} />
+                  ) : (
+                    <EyeOff size={20} />
+                  )}
                 </div>
+              </div>
               <input
                 type={showReauthPassword ? "text" : "password"}
                 value={reauthPassword}
@@ -183,10 +189,10 @@ const EmployeeDashboard = () => {
               <div className="flex">
                 <label className="block mb-1">New Password:</label>
                 <div
-                className="px-5 py-1 cursor-pointer"
+                  className="px-5 py-1 cursor-pointer"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showNewPassword ? <Eye size={20} />: <EyeOff size={20} />}
+                  {showNewPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                 </div>
               </div>
               <input
@@ -216,7 +222,7 @@ const EmployeeDashboard = () => {
             <p className="mb-2">
               Casual Leaves Remaining: {employeeData.leaves || 0}
             </p>
-            
+
             <p className="mb-2">
               Comp Offs Remaining: {employeeData.compOffs || 0}
             </p>
@@ -238,8 +244,8 @@ const EmployeeDashboard = () => {
         );
       case "Leave History":
         return <LeaveHistory employeeId={auth.currentUser.uid} />;
-      case "Pending Leave Approvals":
-        return <PendingLeaveApprovals currentUserId={auth.currentUser.uid} />;
+      // case "Pending Leave Approvals":
+      //   return <PendingLeaveApprovals currentUserId={auth.currentUser.uid} />;
       case "Pending Compoff Approvals":
         return <PendingApprovals currentUserId={auth.currentUser.uid} />;
       case "CompOff History":
@@ -251,7 +257,10 @@ const EmployeeDashboard = () => {
 
   const reauthenticate = async () => {
     const user = auth.currentUser;
-    const credential = EmailAuthProvider.credential(reauthEmail, reauthPassword);
+    const credential = EmailAuthProvider.credential(
+      reauthEmail,
+      reauthPassword
+    );
     try {
       await reauthenticateWithCredential(user, credential);
       return true;
@@ -274,7 +283,7 @@ const EmployeeDashboard = () => {
             "Request Leave",
             "Request Comp Off",
             "Leave History",
-            "Pending Leave Approvals",
+            // "Pending Leave Approvals",
             "CompOff History",
             "Pending Compoff Approvals",
           ].map((item) => (
@@ -283,7 +292,10 @@ const EmployeeDashboard = () => {
               className={`w-full text-left p-4 hover:bg-gray-100 ${
                 activeTab === item ? "bg-gray-200" : ""
               }`}
-              onClick={() => {setActiveTab(item); setIsChangePasswordVisible(false)}}
+              onClick={() => {
+                setActiveTab(item);
+                setIsChangePasswordVisible(false);
+              }}
             >
               {item}
             </button>
@@ -291,13 +303,15 @@ const EmployeeDashboard = () => {
           <div className="px-4 mt-4">
             <button
               className="bg-gray-100 text-black border border-gray-300 px-4 py-2 rounded-md flex items-center"
-              onClick={() => {setIsChangePasswordVisible(true); setActiveTab("")}}
+              onClick={() => {
+                setIsChangePasswordVisible(true);
+                setActiveTab("");
+              }}
             >
               Change Password
             </button>
           </div>
         </nav>
-        
       </div>
 
       {/* Main Content */}
@@ -310,7 +324,6 @@ const EmployeeDashboard = () => {
           >
             Logout <LogOut className="ml-2" size={20} />
           </button>
-          
         </nav>
         <div className="p-8">{renderContent()}</div>
       </div>
