@@ -28,9 +28,9 @@ export const sendSlackNotification = async (leaveData, employeeName,
 
   // Construct the message text for Slack
   const messageText =
-    `*Leave Request Notification*\n\n` +
+    `*Leave Notification*\n\n` +
     `<@${employeeSlackId}> has applied for ${formattedLeaveType} ${dateRangeStr}.\n\n` +
-    `<@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
+    // `<@${seniorEmployeeSlackId}>, they have asked for an approval from you.\n\n` +
     `Link : ${APP_URL}\n\n` +
     `*Details:*\n` +
     `• *Date(s):* ${dateRangeStr}\n` +

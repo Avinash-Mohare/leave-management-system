@@ -2,34 +2,39 @@ import React, { useState, useEffect } from "react";
 import { database } from "../firebase";
 import { ref, onValue, update, get } from "firebase/database";
 import formatDate from "../utils/dateFormat";
-import { sendApprovalNotification, sendHRNotification, sendSeniorActionNotification } from "../utils/sendSlackNotification";
+import {
+  sendApprovalNotification,
+  sendHRNotification,
+  sendSeniorActionNotification,
+} from "../utils/sendSlackNotification";
+import { deductLeave } from "../utils/deductLeave";
 
 const PendingLeaveApprovals = ({ currentUserId }) => {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [employeeNames, setEmployeeNames] = useState({});
 
   useEffect(() => {
-      const requestsRef = ref(database, "leaveRequests");
-      onValue(requestsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const pending = Object.entries(data).flatMap(([userId, userRequests]) =>
-            Object.entries(userRequests)
-              .filter(
-                ([_, request]) =>
-                  request.approvalFrom === currentUserId &&
-                  request.seniorApproval === "pending"
-              )
-              .map(([requestId, request]) => ({
-                id: requestId,
-                userId,
-                ...request,
-              }))
-          );
-          setPendingRequests(pending);
-          fetchEmployeeNames(pending.map((request) => request.userId));
-        }
-      });
+    const requestsRef = ref(database, "leaveRequests");
+    onValue(requestsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const pending = Object.entries(data).flatMap(([userId, userRequests]) =>
+          Object.entries(userRequests)
+            .filter(
+              ([_, request]) =>
+                request.approvalFrom === currentUserId &&
+                request.seniorApproval === "pending"
+            )
+            .map(([requestId, request]) => ({
+              id: requestId,
+              userId,
+              ...request,
+            }))
+        );
+        setPendingRequests(pending);
+        fetchEmployeeNames(pending.map((request) => request.userId));
+      }
+    });
   }, [currentUserId]);
 
   const calculateLeaveDays = (startDate, endDate) => {
@@ -38,49 +43,7 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
     return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const deductLeave = async (employeeUid, leaveType, days, isHalfDay) => {
-    const employeeRef = ref(database, `employees/${employeeUid}`);
-    const snapshot = await get(employeeRef);
-    const employeeData = snapshot.val();
-
-    const leaveDeductInfo = {
-      compoffDeducted: 0,
-      casualLeavesDeducted: 0,
-    };
-
-    if (employeeData) {
-      let updatedLeaves = { ...employeeData };
-      let remainingDays = isHalfDay ? 0.5 : days;
-
-      const deductFromLeaveType = (type, amount) => {
-        const available = updatedLeaves[type] || 0;
-        const deducted = Math.min(available, amount);
-        updatedLeaves[type] = Math.max(0, available - deducted);
-        return deducted;
-      };
-
-      // First, try to deduct from the requested leave type
-      if (updatedLeaves["compOffs"] > 0) {
-        const deducted = deductFromLeaveType("compOffs", remainingDays);
-        leaveDeductInfo.compoffDeducted = deducted;
-        remainingDays -= deducted;
-      }
-      if (remainingDays > 0) {
-        const deducted = deductFromLeaveType("leaves", remainingDays);
-        leaveDeductInfo.casualLeavesDeducted = deducted;
-        remainingDays -= deducted;
-      }
-
-      // If there are still remaining days, deduct from regular leaves
-      // This applies to all leave types and allows leaves to go below 0
-      if (remainingDays > 0) {
-        updatedLeaves.leaves = (updatedLeaves.leaves || 0) - remainingDays;
-        leaveDeductInfo.casualLeavesDeducted += remainingDays;
-      }
-      await update(employeeRef, updatedLeaves);
-    }
-    return leaveDeductInfo;
-  };
+  // deductLeave is now centralized in src/utils/deductLeave.js
 
   // Function to handle approving a leave request
   const approveRequest = async (request) => {
@@ -89,7 +52,12 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
     const days = calculateLeaveDays(startDate, endDate);
 
     try {
-      const leaveDeductInfo = await deductLeave(userId, leaveType, days, isHalfDay);
+      const leaveDeductInfo = await deductLeave(
+        userId,
+        leaveType,
+        days,
+        isHalfDay
+      );
       await update(approveRef, {
         status: "approved",
         seniorApproval: "approved",
@@ -101,13 +69,15 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
       const employeeSnapshot = await get(ref(database, `employees/${userId}`));
       const employeeData = employeeSnapshot.val();
 
-      const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
+      const approverSnapshot = await get(
+        ref(database, `employees/${currentUserId}`)
+      );
       const approverData = approverSnapshot.val();
 
-      try { 
+      try {
         await sendSeniorActionNotification(
           request,
-          'leave',
+          "leave",
           { name: employeeData.name, slackId: employeeData.slackId },
           { name: approverData.name, slackId: approverData.slackId },
           true
@@ -128,19 +98,25 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
     const rejectRef = ref(database, `leaveRequests/${userId}/${id}`);
 
     try {
-      await update(rejectRef, { status: "rejected", seniorApproval: "rejected", approvalTimestamp: Date.now() });
+      await update(rejectRef, {
+        status: "rejected",
+        seniorApproval: "rejected",
+        approvalTimestamp: Date.now(),
+      });
 
       // Get employee data
       const employeeSnapshot = await get(ref(database, `employees/${userId}`));
       const employeeData = employeeSnapshot.val();
 
-      const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
+      const approverSnapshot = await get(
+        ref(database, `employees/${currentUserId}`)
+      );
       const approverData = approverSnapshot.val();
 
       try {
         await sendSeniorActionNotification(
           request,
-          'leave',
+          "leave",
           { name: employeeData.name, slackId: employeeData.slackId },
           { name: approverData.name, slackId: approverData.slackId },
           false
@@ -166,7 +142,7 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
 
   //     const employeeSnapshot = await get(ref(database, `employees/${userId}`));
   //     const employeeData = employeeSnapshot.val();
-      
+
   //     const approverSnapshot = await get(ref(database, `employees/${currentUserId}`));
   //     const approverData = approverSnapshot.val();
 
@@ -248,17 +224,13 @@ const PendingLeaveApprovals = ({ currentUserId }) => {
               </p>
               <div className="flex space-x-2">
                 <button
-                  onClick={() =>
-                    approveRequest(request)
-                  }
+                  onClick={() => approveRequest(request)}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
                 >
                   Approve
                 </button>
                 <button
-                  onClick={() =>
-                    rejectRequest(request)
-                  }
+                  onClick={() => rejectRequest(request)}
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
                 >
                   Reject

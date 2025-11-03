@@ -174,9 +174,7 @@ const PendingApprovals = ({ currentUserId }) => {
       });
 
       // Get employee data
-      const employeeSnapshot = await get(
-        ref(database, `employees/${userId}`)
-      );
+      const employeeSnapshot = await get(ref(database, `employees/${userId}`));
       const employeeData = employeeSnapshot.val();
 
       const approverSnapshot = await get(
